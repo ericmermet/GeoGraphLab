@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<project name="GeoGraphLab" default="hotswap" basedir=".">
+
+	<taskdef name="hotswap" classname="dak.ant.taskdefs.Hotswap" />
+
+	<property name="build" value="./bin"/>
+
+	<target name="hotswap" >
+		<echo> HotSwap </echo>	
+		<hotswap verbose="true" port="9000">
+			<fileset dir="${build}" includes="**/*.class"/>
+		</hotswap>
+	</target>
+
+</project>

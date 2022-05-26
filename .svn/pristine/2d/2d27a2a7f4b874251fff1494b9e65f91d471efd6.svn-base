@@ -1,0 +1,507 @@
+/**
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm.outils;
+
+import fr.ign.cogit.geographlab.algo.geom.RegionsDeVoronoi;
+import fr.ign.cogit.geographlab.algo.indicateurs.APSP;
+import fr.ign.cogit.geographlab.algo.indicateurs.Chevelu;
+import fr.ign.cogit.geographlab.algo.traverse.SpanningTree;
+import fr.ign.cogit.geographlab.cheminements.APSPDijkstra;
+import fr.ign.cogit.geographlab.cheminements.APSPDijkstraOD;
+import fr.ign.cogit.geographlab.cheminements.CheminLogit;
+import fr.ign.cogit.geographlab.cheminements.FWSP;
+import fr.ign.cogit.geographlab.cheminements.OD;
+import fr.ign.cogit.geographlab.cheminements.PCC;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+import fr.ign.cogit.geographlab.ihm.customdockingframes.ColorDockable;
+import fr.ign.cogit.geographlab.test.Debug;
+import fr.ign.cogit.geographlab.visu.NoeudGraphique;
+import fr.ign.cogit.geographlab.visu.ObjetGraphique;
+import fr.ign.cogit.geographlab.visu.ZoneAgregee;
+
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.Calendar;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+public class PanelTools extends ColorDockable {
+	
+	MainWindow parent;
+	
+	private JButton bPCC;
+	private JButton bSpanningTree;
+	private JButton bCheminLogit;
+	private JButton bChevelu;
+	
+	public JComboBox<String> viewList;
+	private JButton bOKViewList;
+	
+//	private JButton bSuppressSelected;
+	
+	private JButton bAgregate;
+	private JButton bDesagregate;
+	private JButton bAllShortestPaths;
+	private JButton bAllShortestPathsDijkstra;
+	private JButton bAllShortestPathFloydWarshall;
+	
+	public JTextArea tGeometry;
+	public JComboBox<String> cbGeometry;
+	
+	public JCheckBox cbAfficheGraphe;
+	public JCheckBox cbAfficheGrapheDelaunay;
+	public JCheckBox cbAfficheVoronoi;
+	public JCheckBox cbAfficheGrapheNonDirige;
+	
+	public JSlider slTailleNoeuds;
+	public JSlider slEpaisseurArcs;
+	public JSlider slBufferZonesAgregees;
+	
+	public JCheckBox cbAfficheAgregation;
+	public JCheckBox cbAfficheSousReseau;
+	
+	public JCheckBox cbAfficheImageFond;
+	
+	public JCheckBox cbAfficheLignesCentre;
+	
+	public JCheckBox cbAfficheEnveloppeConvexe;
+	
+	public JCheckBox cbColorieVoronoi;
+	
+	public PanelTools(MainWindow parent) {
+		this( parent, "Outils", Color.WHITE, 1.0f);
+	}
+	
+	public PanelTools(MainWindow parent, String nom, Color couleur, float luminosite) {
+		super( nom, couleur, luminosite );
+		this.parent = parent;
+		initialize();
+	}
+	
+	private void initialize() {
+		
+		this.bPCC = new JButton("PCC");
+		this.bPCC.addActionListener(new ActionListener() { /* Declenche sur PCC */
+			public void actionPerformed(ActionEvent e) {
+				
+				if (PanelTools.this.parent.getPanelMainDrawActif().listOfSelectedObjects.size() == 2) {
+					
+					NoeudGraphique[] noeudSel = new NoeudGraphique[2];
+					
+					int i = 0;
+					for (ObjetGraphique objGraphique : PanelTools.this.parent.getPanelMainDrawActif().listOfSelectedObjects) {
+						if (objGraphique.getType() == ConstantesApplication.typeVertex)
+							noeudSel[i++] = (NoeudGraphique) objGraphique;
+					}
+					
+					Calendar c1 = Calendar.getInstance();
+					long debut = c1.getTimeInMillis();
+					
+					PCC lePCC = new PCC(PanelTools.this.parent.getPanelMainDrawActif().carte.getGraphe(),
+							new OD(noeudSel[0].getNoeudTopologique(), noeudSel[1].getNoeudTopologique()),
+							1, 0, PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheGrapheNonDirige);
+					
+					Calendar c2 = Calendar.getInstance();
+					long tempscal = c2.getTimeInMillis() - debut;
+					
+					System.out.println(lePCC.toString());
+					System.out.println("calcul effectué en " + tempscal);
+					
+					
+					lePCC.setSelected(true);
+					
+					PanelTools.this.parent.getPanelMainDrawActif().repaint();
+				} else {
+					return;
+				}
+			}
+		});
+		
+		this.bSpanningTree = new JButton("Spanning Tree");
+		this.bSpanningTree.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de l'arbre couvrant");
+				SpanningTree sTree = new SpanningTree(PanelTools.this.parent.getPanelMainDrawActif().carte);
+				sTree.thread.start();
+			}
+		});
+		
+		this.bCheminLogit = new JButton("Chemin Logit");
+		this.bCheminLogit.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+				if (PanelTools.this.parent.getPanelMainDrawActif().listOfSelectedObjects.size() == 2) {
+					
+					NoeudGraphique[] noeudSel = new NoeudGraphique[2];
+					
+					int i = 0;
+					for (ObjetGraphique objGraphique : PanelTools.this.parent.getPanelMainDrawActif().listOfSelectedObjects) {
+						if (objGraphique.getType() == ConstantesApplication.typeVertex)
+							noeudSel[i++] = (NoeudGraphique) objGraphique;
+					}
+					
+					CheminLogit cheminLogit = new CheminLogit(PanelTools.this.parent.getPanelMainDrawActif().carte, new OD(noeudSel[0].getNoeudTopologique(), noeudSel[1].getNoeudTopologique()), new Double(0.5));
+					// Parametre teta pour le modele Logit
+					cheminLogit.thread.start();
+					
+					PanelTools.this.parent.getPanelMainDrawActif().repaint();
+					
+				}
+			}
+		});
+		
+		this.bChevelu = new JButton("Chevelu");
+		this.bChevelu.addActionListener(new ActionListener() { /*
+		 * Declenche sur
+		 * Chemin
+		 */
+			public void actionPerformed(ActionEvent arg0) {
+				Chevelu ericGrosso = new Chevelu(PanelTools.this.parent.getPanelMainDrawActif().carte);
+				ericGrosso.thread.start();
+			}
+		});
+		
+		String[] viewStrings = { "Vue Normale", "Vue Indicateur" };
+		
+		this.viewList = new JComboBox<String>(viewStrings);
+		this.viewList.setSelectedIndex(0);
+		
+		this.bOKViewList = new JButton("Ok");
+		this.bOKViewList.addActionListener(new ActionListener() { /*
+		 * Declenche sur
+		 * Vue Normale
+		 */
+			public void actionPerformed(ActionEvent arg0) {
+				switch (PanelTools.this.viewList.getSelectedIndex()) {
+					case 0: // / VUE NORMALE
+						PanelTools.this.parent.panelActif.carte.variablesDeCarte.affichageEnCours = new String("Vue Normale");
+						break;
+					case 1: // / VUE INDICATEUR
+						PanelTools.this.parent.panelActif.carte.variablesDeCarte.affichageEnCours = new String("Vue Indicateur");
+						break;
+					default:
+						PanelTools.this.parent.panelActif.carte.variablesDeCarte.affichageEnCours = new String("Vue Normale");
+						break;
+				}
+				PanelTools.this.parent.panelLegend.updateLegendFromModel();
+				PanelTools.this.parent.getPanelMainDrawActif().repaint();
+			}
+		});
+		
+//		this.bSuppressSelected = new JButton("Sup éléments sélectionnés");
+		
+		
+		this.bAgregate = new JButton("Agreger");
+		this.bAgregate.addActionListener(new ActionListener() {
+		 // Declenche sur Agreger
+			public void actionPerformed(ActionEvent arg0) {
+				
+				ZoneAgregee nouvelleZoneAgregee = new ZoneAgregee(PanelTools.this.parent.getPanelMainDrawActif(), PanelTools.this.parent.getPanelMainDrawActif().listOfSelectedObjects);
+				
+				PanelTools.this.parent.getPanelMainDrawActif().carte.getVueDuGraphe().addZoneAgregee(nouvelleZoneAgregee);
+				PanelTools.this.parent.getPanelMainDrawActif().carte.getGraphe().setGrapheChange();
+				
+				PanelTools.this.parent.getPanelMainDrawActif().repaint();
+			}
+		});
+		
+		this.bDesagregate = new JButton("Desagreger");
+		this.bDesagregate.addActionListener(new ActionListener() {
+		 	// Declenche sur Desagreger
+			public void actionPerformed(ActionEvent arg0) {
+				//TO DO
+			}
+		});
+		
+		this.bAllShortestPaths = new JButton("All PCC");
+		this.bAllShortestPaths.addActionListener(new ActionListener() { /*
+		 * Declenche
+		 * sur
+		 * Desagreger
+		 */
+			public void actionPerformed(ActionEvent arg0) {
+				APSP allShortestPath = new APSP(PanelTools.this.parent.panelActif.carte);
+				allShortestPath.thread.start();
+			}
+		});
+		
+		this.bAllShortestPathsDijkstra = new JButton("All PCC Dijkstra");
+		this.bAllShortestPathsDijkstra.addActionListener(new ActionListener() { 
+			public void actionPerformed(ActionEvent arg0) {
+				APSPDijkstra allShortestPath2 = new APSPDijkstra(PanelTools.this.parent.panelActif.carte);
+				allShortestPath2.thread.start();
+			}
+		});
+		
+		this.bAllShortestPathFloydWarshall = new JButton("All PCC OD");
+		this.bAllShortestPathFloydWarshall.addActionListener(new ActionListener() { 
+			public void actionPerformed(ActionEvent arg0) {
+				APSPDijkstraOD allShortestPathOD = new APSPDijkstraOD(PanelTools.this.parent.panelActif.carte);
+				allShortestPathOD.thread.start();
+			}
+		});
+		
+		this.cbAfficheGraphe = new JCheckBox("Reseau");
+		this.cbAfficheGraphe.setSelected(ConstantesApplication.afficheGraphe);
+		
+		this.cbAfficheGrapheDelaunay = new JCheckBox("Delaunay");
+		this.cbAfficheGrapheDelaunay.setSelected(ConstantesApplication.afficheGrapheDelaunay);
+		
+		this.cbAfficheVoronoi = new JCheckBox("Voronoi");
+		this.cbAfficheVoronoi.setSelected(ConstantesApplication.afficheVoronoi);
+		
+		this.cbAfficheGrapheNonDirige = new JCheckBox("Non dirige");
+		this.cbAfficheGrapheNonDirige.setSelected(ConstantesApplication.afficheGrapheNonDirige);
+		
+		this.tGeometry = new JTextArea("Geometrie : ");
+		String[] viewStringsGeometry = { "Simple", "Reelle (Shape)" };
+		this.cbGeometry = new JComboBox<String>(viewStringsGeometry);
+		this.cbGeometry.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				// Selection de l'affichage geometrique des arcs (LineString = Simple ou MultiLineString = Reelle Shape )
+				switch (PanelTools.this.cbGeometry.getSelectedIndex()) {
+					case 0:
+						PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheGeometrie = 0;
+						break;
+					case 1:
+						PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheGeometrie = 1;
+						break;
+					default:
+						PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheGeometrie = 0;
+						break;
+				}
+				PanelTools.this.parent.panelActif.repaint();
+			}
+		});
+		
+		this.slTailleNoeuds = new JSlider(ConstantesApplication.vertexRadiusMin, ConstantesApplication.vertexRadiusMax, ConstantesApplication.vertexRadius);
+		this.slTailleNoeuds.setMinorTickSpacing(ConstantesApplication.vertexRadiusMin);
+		this.slTailleNoeuds.setMajorTickSpacing(ConstantesApplication.vertexRadiusMax);
+		this.slTailleNoeuds.setPaintTicks(true);
+		this.slTailleNoeuds.setPaintLabels(true);
+		this.slTailleNoeuds.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider source = (JSlider) e.getSource();
+				
+				ConstantesApplication.vertexRadius = source.getValue();
+				PanelTools.this.parent.panelActif.repaint();
+				
+			}
+		});
+		
+		this.slEpaisseurArcs = new JSlider(ConstantesApplication.edgeWidthMin, ConstantesApplication.edgeWidthMax, ConstantesApplication.edgeWidth);
+		this.slEpaisseurArcs.setMinorTickSpacing(ConstantesApplication.edgeWidthMin);
+		this.slEpaisseurArcs.setMajorTickSpacing(ConstantesApplication.edgeWidthMax);
+		this.slEpaisseurArcs.setPaintTicks(true);
+		this.slEpaisseurArcs.setPaintLabels(true);
+		this.slEpaisseurArcs.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider source = (JSlider) e.getSource();
+				
+				ConstantesApplication.edgeWidth = source.getValue();
+				PanelTools.this.parent.panelActif.repaint();
+				
+			}
+		});
+		
+		this.slBufferZonesAgregees = new JSlider(ConstantesApplication.bufferZoneAgregeeMin, ConstantesApplication.bufferZoneAgregeeMax, ConstantesApplication.bufferZoneAgregee);
+		this.slBufferZonesAgregees.setMinorTickSpacing(ConstantesApplication.bufferZoneAgregeeMin);
+		this.slBufferZonesAgregees.setMajorTickSpacing(ConstantesApplication.bufferZoneAgregeeMax);
+		this.slBufferZonesAgregees.setPaintTicks(true);
+		this.slBufferZonesAgregees.setPaintLabels(true);
+		this.slBufferZonesAgregees.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider source = (JSlider) e.getSource();
+				
+				ConstantesApplication.bufferZoneAgregee = source.getValue();
+				PanelTools.this.parent.panelActif.repaint();
+				
+			}
+		});
+		
+		this.cbAfficheAgregation = new JCheckBox("Zones Agregees");
+		this.cbAfficheAgregation.setSelected(true);
+		
+		this.cbAfficheSousReseau = new JCheckBox("Sous-Reseaux");
+		this.cbAfficheSousReseau.setSelected(true);
+		
+		this.cbAfficheImageFond = new JCheckBox("Image de Fond");
+		this.cbAfficheImageFond.setSelected(false);
+		
+		this.cbAfficheLignesCentre = new JCheckBox("Lignes de centre");
+		this.cbAfficheLignesCentre.setSelected(false);
+		
+		this.cbAfficheEnveloppeConvexe = new JCheckBox("Enveloppe Convexe");
+		this.cbAfficheEnveloppeConvexe.setSelected(false);
+		
+		this.cbColorieVoronoi = new JCheckBox("Colorier Surfaces");
+		this.cbColorieVoronoi.setEnabled(false);
+		
+		this.cbAfficheGraphe.addItemListener(new CheckBoxesListener());
+		this.cbAfficheGrapheDelaunay.addItemListener(new CheckBoxesListener());
+		this.cbAfficheVoronoi.addItemListener(new CheckBoxesListener());
+		
+		this.cbAfficheVoronoi.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				if( PanelTools.this.cbAfficheVoronoi.isSelected() ){
+					PanelTools.this.cbColorieVoronoi.setEnabled(true);
+					
+					Debug.printDebug("Calcul des surfaces de Voronoi");
+					RegionsDeVoronoi surfVoronoi = new RegionsDeVoronoi(PanelTools.this.parent.getPanelMainDrawActif().carte.getGraphe());
+					surfVoronoi.run();
+					surfVoronoi.pondereNoeudAleaRegion();
+					PanelTools.this.parent.panelActif.carte.setPolygonesDeVoronoi(surfVoronoi.getRegionsDeVoronoi());
+				} else
+					PanelTools.this.cbColorieVoronoi.setEnabled(false);
+			}
+		});
+		
+		this.cbAfficheGrapheNonDirige.addItemListener(new CheckBoxesListener());
+		this.cbAfficheAgregation.addItemListener(new CheckBoxesListener());
+		this.cbAfficheSousReseau.addItemListener(new CheckBoxesListener());
+		this.cbAfficheImageFond.addItemListener(new CheckBoxesListener());
+		this.cbAfficheLignesCentre.addItemListener(new CheckBoxesListener());
+		this.cbAfficheEnveloppeConvexe.addItemListener(new CheckBoxesListener());
+		this.cbColorieVoronoi.addItemListener(new CheckBoxesListener());
+		
+//		this.cbColorieVoronoi.addChangeListener(new ChangeListener() {
+//			
+//			@Override
+//			public void stateChanged(ChangeEvent e) {
+//				if( PanelTools.this.cbColorieVoronoi.isSelected() ){
+//					RegionsDeVoronoi surfVoronoi = new RegionsDeVoronoi(PanelTools.this.parent.getPanelMainDrawActif().carte.getGraphe());
+//					surfVoronoi.run();
+//					surfVoronoi.pondereNoeudAleaRegion();
+//					PanelTools.this.parent.panelActif.carte.setPolygonesDeVoronoi(surfVoronoi.getRegionsDeVoronoi());
+//				}
+//			}
+//		});
+		
+		JPanel localPanelPCC = new JPanel();
+		JPanel localPanelVues = new JPanel();
+		JPanel localPanelGeometry = new JPanel();
+		JPanel localPanelTailleNoeud = new JPanel();
+		JPanel localPanelEpaisseurArc = new JPanel();
+		JPanel localPanelLargeurBufferZone = new JPanel();
+		JPanel localPanelOperations = new JPanel();
+		JPanel localPanelCheckBoxes = new JPanel();
+		JPanel localPanelAgregation = new JPanel();
+		JPanel localPanelImageDeFond = new JPanel();
+		JPanel localPanelEspace = new JPanel();
+		JPanel localPanelEnveloppe = new JPanel();
+		
+//		setBackground(Color.PINK);
+		localPanelPCC.setLayout(new FlowLayout(FlowLayout.LEFT));
+		localPanelPCC.add(this.bPCC);
+		localPanelPCC.add(this.bSpanningTree);
+		localPanelPCC.add(this.bCheminLogit);
+		localPanelPCC.add(this.bChevelu);
+		localPanelVues.setLayout(new FlowLayout(FlowLayout.LEFT));
+		localPanelVues.add(this.viewList);
+		localPanelVues.add(this.bOKViewList);
+		localPanelGeometry.add(this.tGeometry);
+		localPanelGeometry.add(this.cbGeometry);
+		localPanelOperations.setLayout(new FlowLayout(FlowLayout.LEFT));
+		localPanelOperations.add(this.bAgregate);
+		localPanelOperations.add(this.bDesagregate);
+		localPanelOperations.add(this.bAllShortestPaths);
+		localPanelOperations.add(this.bAllShortestPathsDijkstra);
+		localPanelOperations.add(this.bAllShortestPathFloydWarshall);
+		localPanelCheckBoxes.add(this.cbAfficheGraphe);
+		localPanelCheckBoxes.setLayout(new FlowLayout(FlowLayout.LEFT));
+		localPanelCheckBoxes.add(this.cbAfficheGraphe);
+		localPanelCheckBoxes.add(this.cbAfficheGrapheDelaunay);
+		localPanelCheckBoxes.add(this.cbAfficheVoronoi);
+		localPanelCheckBoxes.add(this.cbAfficheGrapheNonDirige);
+//		localPanelTailleNoeud.add(new JTextField("Taille des noeuds"));
+//		localPanelTailleNoeud.add(this.slTailleNoeuds);
+//		localPanelEpaisseurArc.add(new JTextField("Taille des arcs"));
+//		localPanelEpaisseurArc.add(this.slEpaisseurArcs);
+//		localPanelLargeurBufferZone.add(new JTextField("Buffers des zones"));
+//		localPanelLargeurBufferZone.add(this.slBufferZonesAgregees);
+		localPanelAgregation.add(this.cbAfficheAgregation);
+		localPanelAgregation.add(this.cbAfficheSousReseau);
+		localPanelImageDeFond.add(this.cbAfficheImageFond);
+		localPanelEspace.add(this.cbAfficheLignesCentre);
+		localPanelEnveloppe.add(this.cbAfficheEnveloppeConvexe);
+		localPanelEnveloppe.add(this.cbColorieVoronoi);
+		
+		setLayout(new FlowLayout(FlowLayout.LEFT));
+		add(localPanelPCC);
+		add(localPanelVues);
+		add(localPanelGeometry);
+		add(localPanelOperations);
+		add(localPanelCheckBoxes);
+//		add(localPanelTailleNoeud);
+//		add(localPanelEpaisseurArc);
+//		add(localPanelLargeurBufferZone);
+		add(localPanelAgregation);
+		add(localPanelImageDeFond);
+		add(localPanelEspace);
+		add(localPanelEnveloppe);
+	}
+	
+	class CheckBoxesListener implements ItemListener {
+		
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			Object source = e.getItemSelectable();
+			
+			if (source == PanelTools.this.cbAfficheGraphe) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheGraphe = PanelTools.this.cbAfficheGraphe.isSelected();
+			} else if (source == PanelTools.this.cbAfficheGrapheDelaunay) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheGrapheDelaunay = PanelTools.this.cbAfficheGrapheDelaunay.isSelected();
+			} else if (source == PanelTools.this.cbAfficheVoronoi) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheVoronoi = PanelTools.this.cbAfficheVoronoi.isSelected();
+			} else if (source == PanelTools.this.cbAfficheGrapheNonDirige) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheGrapheNonDirige = PanelTools.this.cbAfficheGrapheNonDirige.isSelected();
+				PanelTools.this.parent.panelActif.carte.getGraphe().setGrapheChange();
+			} else if (source == PanelTools.this.cbAfficheAgregation) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheAgregation = PanelTools.this.cbAfficheAgregation.isSelected();
+			} else if (source == PanelTools.this.cbAfficheSousReseau) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheSousReseau = PanelTools.this.cbAfficheSousReseau.isSelected();
+			} else if (source == PanelTools.this.cbAfficheImageFond) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheImageDeFond = PanelTools.this.cbAfficheImageFond.isSelected();
+			} else if (source == PanelTools.this.cbAfficheLignesCentre) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheLigneCentre = PanelTools.this.cbAfficheLignesCentre.isSelected();
+			} else if (source == PanelTools.this.cbAfficheEnveloppeConvexe) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheEnveloppeConvexe = PanelTools.this.cbAfficheEnveloppeConvexe.isSelected();
+			} else if (source == PanelTools.this.cbColorieVoronoi) {
+				PanelTools.this.parent.panelActif.carte.variablesDeCarte.afficheCouleurVoronoi = PanelTools.this.cbColorieVoronoi.isSelected();
+			}
+			PanelTools.this.parent.panelActif.repaint();
+		}
+	}
+	
+}

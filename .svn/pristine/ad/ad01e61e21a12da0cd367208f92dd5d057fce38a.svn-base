@@ -1,0 +1,333 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm.listes;
+
+import fr.ign.cogit.geographlab.cheminements.OD;
+import fr.ign.cogit.geographlab.cheminements.PCC;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.customdockingframes.ColorDockable;
+
+import javax.swing.DefaultCellEditor;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.StringTokenizer;
+
+/**
+ * TableRenderDemo is just like TableDemo, except that it explicitly initializes
+ * column sizes and it uses a combo box as an editor for the Sport column.
+ */
+public class PanelOD extends ColorDockable {
+	
+	boolean DEBUG = false;
+	
+	static JTable table;
+	
+	public static MainWindow parent;
+	
+	public PanelOD(MainWindow parent) {
+		this( parent, "Liste des OD", Color.WHITE, 1.0f);
+	}
+	
+	public PanelOD(MainWindow parent, String nom, Color couleur, float luminosite) {
+		super( nom, couleur, luminosite );
+		//Si bug voir constructeur avec super(new GridLayout(1, 0)); sur un JPanel
+		
+		PanelOD.parent = parent;
+		
+		table = new JTable(new MyTableModel());
+		table.setPreferredScrollableViewportSize(new Dimension(500, 70));
+		table.setFillsViewportHeight(true);
+		
+		table.getModel().addTableModelListener(new TableModelListener() {
+			
+			@Override
+			public void tableChanged(TableModelEvent e) {
+				int row = e.getFirstRow();
+				int column = e.getColumn();
+				MyTableModel model = (MyTableModel) e.getSource();
+				String columnName = model.getColumnName(column);
+				Object data = model.getValueAt(row, column);
+				
+				Double nouvelleValeur = new Double(0.0);
+				
+				if( e.getColumn() == 1 && table.isRowSelected(e.getFirstRow())) {
+					// Changement du poids d'une OD
+					nouvelleValeur = (Double)data;//new Double(Double.parseDouble((String) data));
+					String OD = PanelOD.table.getValueAt(PanelOD.table.getSelectedRow(), 0).toString();
+					
+					StringTokenizer strTok = new StringTokenizer(OD);
+					
+					Noeud O = PanelOD.parent.panelActif.carte.getGraphe().getNoeud(strTok.nextToken());
+					strTok.nextToken();	//Pour le tiret
+					//Bug potentiel pour les noms de noeuds avec espace ???
+					Noeud D = PanelOD.parent.panelActif.carte.getGraphe().getNoeud(strTok.nextToken());
+					
+					OD localOD = new OD(O, D);
+					PanelOD.parent.panelActif.carte.getEspace().getOD(O, D);
+					OD odSelectionne = PanelOD.parent.panelActif.carte.getEspace().getEspaceDeDef().get(new Integer(localOD.hashCode()));
+					try{
+						odSelectionne.setPonderation(nouvelleValeur.doubleValue());
+					}catch(Exception ex){
+						System.out.println("pb table od");
+					}
+					
+				}
+				
+				if (e.getColumn() == 3 && table.isRowSelected(e.getFirstRow())) {
+					String OD = PanelOD.table.getValueAt(PanelOD.table.getSelectedRow(), 0).toString();
+					StringTokenizer strTok = new StringTokenizer(OD);
+					
+					Noeud O = PanelOD.parent.panelActif.carte.getGraphe().getNoeud(strTok.nextToken());
+					strTok.nextToken();
+					Noeud D = PanelOD.parent.panelActif.carte.getGraphe().getNoeud(strTok.nextToken());
+					
+				}
+			}
+			
+		});
+		
+		table.addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+//				System.out.println("Key Pressed");
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				//
+			}
+			
+			@Override
+			public void keyTyped(KeyEvent e) {
+				//
+			}
+		});
+		
+		// Create the scroll pane and add the table to it.
+		JScrollPane scrollPane = new JScrollPane(table);
+		
+		// Set up column sizes.
+		initColumnSizes(table);
+		
+		// ComboBox pour le choix du mode de cheminement
+		setcolonneCheminement(table, table.getColumnModel().getColumn(2));
+		
+		// CheckBox pour le choix du mode de cheminement
+		setcolonneVisibility(table, table.getColumnModel().getColumn(3));
+		
+		// Add the scroll pane to this panel.
+		add(scrollPane);
+	}
+	
+	public static JTable getJTable() {
+		return table;
+	}
+	
+	public static void setJTable(JTable tNomODs) {
+		table = tNomODs;
+	}
+	
+	public static void setModelDataSize(int taille) {
+		((MyTableModel) table.getModel()).setDataSize(taille);
+	}
+	
+	private static void initColumnSizes(JTable laTable) {
+		MyTableModel model = (MyTableModel) laTable.getModel();
+		TableColumn column = null;
+		Component comp = null;
+		int headerWidth = 0;
+		int cellWidth = 0;
+		Object[] longValues = model.longValues;
+		TableCellRenderer headerRenderer = laTable.getTableHeader().getDefaultRenderer();
+		
+		for (int i = 0; i < 4; i++) {
+			column = laTable.getColumnModel().getColumn(i);
+			
+			comp = headerRenderer.getTableCellRendererComponent(null, column.getHeaderValue(), false, false, 0, 0);
+			headerWidth = comp.getPreferredSize().width;
+			
+			comp = laTable.getDefaultRenderer(model.getColumnClass(i)).getTableCellRendererComponent(laTable, longValues[i], false, false, 0, i);
+			cellWidth = comp.getPreferredSize().width;
+			
+			column.setPreferredWidth(Math.max(headerWidth, cellWidth));
+		}
+	}
+	
+	public static void setcolonneCheminement(JTable table, TableColumn colonneCheminement) {
+		// Set up the editor for the sport cells.
+		JComboBox<String> comboBox = new JComboBox<String>();
+		comboBox.addItem("Non defini");
+		comboBox.addItem("PCC");
+		comboBox.addItem("Utilisateur");
+		colonneCheminement.setCellEditor(new DefaultCellEditor(comboBox));
+		
+		// Set up tool tips for the sport cells.
+		DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+		renderer.setToolTipText("Click for choose OD way path");
+		colonneCheminement.setCellRenderer(renderer);
+		
+		comboBox.addItemListener(new ItemListener() {
+			
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				String OD = PanelOD.table.getValueAt(PanelOD.table.getSelectedRow(), 0).toString();
+				StringTokenizer strTok = new StringTokenizer(OD);
+				
+				Noeud O = PanelOD.parent.panelActif.carte.getGraphe().getNoeud(strTok.nextToken());
+				System.out.println(O.getNom());
+				strTok.nextToken();
+				Noeud D = PanelOD.parent.panelActif.carte.getGraphe().getNoeud(strTok.nextToken());
+				System.out.println(D.getNom());
+				
+				System.out.println("espace : " + PanelOD.parent.getPanelMainDrawActif().carte.getEspace());
+				System.out.println(PanelOD.parent.getPanelMainDrawActif().carte.getEspace().getOD(O, D));
+				System.out.println(PanelOD.parent.getPanelMainDrawActif().carte.getEspace().getOD(D, O));
+				
+				String item = (String) e.getItem();
+				
+				if (e.getStateChange() == ItemEvent.SELECTED & item.compareTo("PCC") == 0) {
+					PCC lePCC = new PCC(PanelOD.parent.getPanelMainDrawActif().carte.getGraphe(), 
+							PanelOD.parent.getPanelMainDrawActif().carte.getEspace().getOD(O, D),
+							1.0, 0);
+					
+					lePCC.setSelected(true);
+					
+					PanelOD.table.setValueAt(new Boolean(true), PanelOD.table.getSelectedRow(), 3);
+					
+					PanelOD.parent.panelActif.repaint();
+				}
+				if (e.getStateChange() == ItemEvent.SELECTED & item.compareTo("Utilisateur") == 0) {
+					// Classe de selection d'un chemin
+					// TODO
+					
+				}
+				if (e.getStateChange() == ItemEvent.SELECTED & item.compareTo("Non defini") == 0) {
+					PanelOD.table.setValueAt(new Boolean(false), PanelOD.table.getSelectedRow(), 3);
+					
+					PanelOD.parent.panelActif.listOfSelectedObjects.clear();
+					
+					PanelOD.parent.panelActif.repaint();
+				}
+			}
+			
+		});
+	}
+	
+	public static void setcolonneVisibility(JTable table, TableColumn colonneVisible) {
+		// Set up the editor for the sport cells.
+		JCheckBox cbVisible = new JCheckBox();
+		colonneVisible.setCellEditor(new DefaultCellEditor(cbVisible));
+		
+		// Set up tool tips for the sport cells.
+		DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+		renderer.setToolTipText("Click for OD visibility");
+		colonneVisible.setCellRenderer(renderer);
+		
+		cbVisible.addItemListener(new ItemListener() {
+			
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				if (PanelOD.table.getValueAt(PanelOD.table.getSelectedRow(), 2).toString().compareTo("PCC") == 0) {
+					// TODO stockage de toutes les OD calculer??
+				}
+			}
+			
+		});
+	}
+	
+	class MyTableModel extends AbstractTableModel {
+		
+		private static final long serialVersionUID = 1L;
+		
+		private String[] columnNames = { "Nom des OD", "Poids", "Cheminement", "Visible" };
+		
+		private Object[][] data = { { "		", "		", "		", new Boolean(false) } };
+		
+		public final Object[] longValues = { "Nom d'une OD qui est longue et meme plus longue que ca", "1000000", "Non defini", Boolean.TRUE };
+		
+		public int getColumnCount() {
+			return this.columnNames.length;
+		}
+		
+		public int getRowCount() {
+			return this.data.length;
+		}
+		
+		@Override
+		public String getColumnName(int col) {
+			return this.columnNames[col];
+		}
+		
+		public Object getValueAt(int row, int col) {
+			return this.data[row][col];
+		}
+		
+		public void setDataSize(int taille) {
+			this.data = new Object[taille][4];
+		}
+		
+		@Override
+		public Class<? extends Object> getColumnClass(int c) {
+			return getValueAt(0, c).getClass();
+		}
+		
+		@Override
+		public boolean isCellEditable(int row, int col) {
+			return true;
+		}
+		
+		@Override
+		public void setValueAt(Object value, int row, int col) {
+			if (PanelOD.this.DEBUG) {
+				System.out.println("Setting value at " + row + "," + col + " to " + value + " (an instance of " + value.getClass() + ")");
+			}
+			
+			this.data[row][col] = value;
+			fireTableCellUpdated(row, col);
+			
+			if (PanelOD.this.DEBUG) {
+				System.out.println("New value of data:");
+				printDebugData();
+			}
+		}
+		
+		private void printDebugData() {
+			int numRows = getRowCount();
+			int numCols = getColumnCount();
+			
+			for (int i = 0; i < numRows; i++) {
+				System.out.print("    row " + i + ":");
+				for (int j = 0; j < numCols; j++) {
+					System.out.print("  " + this.data[i][j]);
+				}
+				System.out.println();
+			}
+			System.out.println("--------------------------");
+		}
+	}
+	
+}

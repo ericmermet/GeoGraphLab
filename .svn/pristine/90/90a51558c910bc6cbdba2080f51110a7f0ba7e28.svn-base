@@ -1,0 +1,21 @@
+graph G {
+  1 [label = "Vertex_5311 , 0.0 , (0,0,255)"];
+  2 [label = "Vertex_2568 , 0.0 , (0,0,255)"];
+  3 [label = "Vertex_5910 , 0.0 , (0,0,255)"];
+  4 [label = "Vertex_9836 , 0.0 , (0,0,255)"];
+  5 [label = "Vertex_3118 , 0.0 , (0,0,255)"];
+  6 [label = "Vertex_9727 , 0.0 , (0,0,255)"];
+  7 [label = "Vertex_5584 , 0.0 , (0,0,255)"];
+  3 -- 7 [label = "(graphe.Noeud@6d87275d - graphe.Noeud@66c54654) , 2.0 , (64,64,64)"];
+  7 -- 6 [label = "(graphe.Noeud@66c54654 - graphe.Noeud@c4ce427) , 2.0 , (64,64,64)"];
+  6 -- 2 [label = "(graphe.Noeud@c4ce427 - graphe.Noeud@2f6a23cf) , 2.0 , (64,64,64)"];
+  2 -- 4 [label = "(graphe.Noeud@2f6a23cf - graphe.Noeud@594560cf) , 2.0 , (64,64,64)"];
+  4 -- 5 [label = "(graphe.Noeud@594560cf - graphe.Noeud@67384a6a) , 2.0 , (64,64,64)"];
+  5 -- 3 [label = "(graphe.Noeud@67384a6a - graphe.Noeud@6d87275d) , 2.0 , (64,64,64)"];
+  5 -- 1 [label = "(graphe.Noeud@67384a6a - graphe.Noeud@12e4d0cd) , 2.0 , (64,64,64)"];
+  1 -- 7 [label = "(graphe.Noeud@12e4d0cd - graphe.Noeud@66c54654) , 2.0 , (64,64,64)"];
+  3 -- 1 [label = "(graphe.Noeud@6d87275d - graphe.Noeud@12e4d0cd) , 2.0 , (64,64,64)"];
+  1 -- 6 [label = "(graphe.Noeud@12e4d0cd - graphe.Noeud@c4ce427) , 2.0 , (64,64,64)"];
+  1 -- 2 [label = "(graphe.Noeud@12e4d0cd - graphe.Noeud@2f6a23cf) , 2.0 , (64,64,64)"];
+  1 -- 4 [label = "(graphe.Noeud@12e4d0cd - graphe.Noeud@594560cf) , 2.0 , (64,64,64)"];
+}

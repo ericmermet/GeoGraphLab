@@ -1,0 +1,187 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.exploration;
+
+import fr.ign.cogit.geographlab.cheminements.OD;
+import fr.ign.cogit.geographlab.exploration.events.EspaceEvent;
+import fr.ign.cogit.geographlab.exploration.listeners.EspaceListener;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.swing.event.EventListenerList;
+
+
+public class Espace {
+	
+	MainWindow fenetrePrincipale;
+	public HashMap<Integer, OD> espaceDeDef = new HashMap<Integer, OD>();
+	
+	public boolean locked = false;
+	
+	private final EventListenerList listenersEspace = new EventListenerList();
+	
+	public Espace(MainWindow mainWindow, HashMap<Integer, OD> odEspace) {
+		
+		this.fenetrePrincipale = mainWindow;
+		addEspaceListener(new EspaceEvent(mainWindow) {
+			// Event for space listener
+		});
+		
+		setEspaceDeDef(odEspace);
+	}
+	
+	public void setEspaceDeDef(HashMap<Integer, OD> espaceDeDef) {
+		this.espaceDeDef = espaceDeDef;
+		// fireGrapheChange();
+	}
+	
+	public void setEspaceDeDef(HashSet<OD> espaceDeDef) {
+		
+		this.espaceDeDef.clear();
+		for (OD od : espaceDeDef) {
+			this.espaceDeDef.put( new Integer(od.hashCode()), od);
+		}
+		
+		// fireGrapheChange();
+	}
+	
+	public HashMap<Integer, OD> getToutesLesODDirected( boolean directed) {
+		
+		HashMap<Integer, OD> returnToutesLesOD = new HashMap<Integer, OD>();
+		
+		if( directed == false )
+			returnToutesLesOD = this.fenetrePrincipale.panelActif.carte.getGraphe().getToutesLesODUDirected();
+		else
+			returnToutesLesOD = this.fenetrePrincipale.panelActif.carte.getGraphe().getToutesLesOD();
+		
+		setEspaceDeDef(returnToutesLesOD);
+		fireGrapheChange();
+		
+		return returnToutesLesOD;
+	}
+	
+	public void populate(boolean nonDirige) {
+		
+		this.clearEspaceDeDef();
+		
+		if( nonDirige) {
+			
+			Object[] tabNoeud = this.fenetrePrincipale.panelActif.carte.getGraphe().getNoeuds().toArray();
+			
+			for(int i = 0; i <tabNoeud.length; i++)
+			{ 
+				for(int j = 0; j <i; j++)
+				{ 
+					if( !tabNoeud[i].equals(tabNoeud[j]) ) {
+						
+						OD tempOD = new OD((Noeud)tabNoeud[i], (Noeud)tabNoeud[j]);
+						
+						this.espaceDeDef.put(tempOD.hashCode(), tempOD);
+						
+					}
+				} 
+			} 
+		}else{
+			
+			for (Noeud iterNoeud1 : this.fenetrePrincipale.panelActif.carte.getGraphe().getNoeuds()) {
+				for (Noeud iterNoeud2 : this.fenetrePrincipale.panelActif.carte.getGraphe().getNoeuds()) {
+					if( !iterNoeud1.equals(iterNoeud2) ) {
+						
+						OD tempOD = new OD(iterNoeud1, iterNoeud2);
+						tempOD.setPonderation(0.0);
+						
+						this.espaceDeDef.put(tempOD.hashCode(), tempOD);
+						
+					}
+				}
+			}
+		}
+		fireGrapheChange();
+		
+	}
+	
+	public void setToutesLesOD(Set<Noeud> tousLesNoeuds) {
+		
+		this.espaceDeDef.clear();
+		setEspaceDeDef(this.espaceDeDef);
+		fireGrapheChange();
+		
+		for (Noeud iterNoeud1 : tousLesNoeuds) {
+			for (Noeud iterNoeud2 : tousLesNoeuds) {
+				if( !iterNoeud1.equals(iterNoeud2 ) ) {
+					
+					//Cas non dirige dans tous les cas, on traite les doubles OD dans le calcul des PCC
+					OD localOD1 = new OD(iterNoeud1, iterNoeud2, false);
+					this.espaceDeDef.put(localOD1.hashCode(), localOD1);
+					System.out.print("_");
+					
+				}
+			}
+		}
+		
+		setEspaceDeDef(this.espaceDeDef);
+		fireGrapheChange();
+	}
+	
+	public Collection<OD> getToutesLesOD() {
+		return this.espaceDeDef.values();
+	}
+	
+	public HashMap<Integer, OD> getEspaceDeDef() {
+		return this.espaceDeDef;
+	}
+	
+	public void clearEspaceDeDef() {
+		this.espaceDeDef.clear();
+	}
+	
+	public OD getOD(Noeud origine, Noeud destination) {
+		
+		OD localOD = new OD(origine, destination);
+		
+		return this.espaceDeDef.get(localOD);
+	}
+	
+	@Override
+	public Espace clone() {
+		Espace espaceCopie = null;
+		HashMap<Integer, OD> espaceDeDefcopie = new HashMap<Integer, OD>();
+		espaceCopie = new Espace(this.fenetrePrincipale, null);
+		
+		for (OD iterOD : getToutesLesOD()) {
+			espaceDeDefcopie.put(new Integer(iterOD.hashCode()), iterOD);
+		}
+		
+		espaceCopie.setEspaceDeDef(espaceDeDefcopie);
+		return espaceCopie;
+	}
+	
+	public void addEspaceListener(EspaceListener listener) {
+		this.listenersEspace.add(EspaceListener.class, listener);
+	}
+	
+	public void removeEspaceListener(EspaceListener listener) {
+		this.listenersEspace.remove(EspaceListener.class, listener);
+	}
+	
+	public EspaceListener[] getEspaceListeners() {
+		return this.listenersEspace.getListeners(EspaceListener.class);
+	}
+	
+	protected void fireGrapheChange() {
+		for (EspaceListener listener : getEspaceListeners()) {
+			listener.espaceChange();
+		}
+	}
+}

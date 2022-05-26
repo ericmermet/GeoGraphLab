@@ -1,0 +1,11 @@
+graph G {
+  1 [label = "Ouest"];
+  2 [label = "Nord"];
+  3 [label = "Est"];
+  4 [label = "Sud"];
+  1 -- 2 [label = "(Ouest - Nord) , 1.0"];
+  2 -- 3 [label = "(Nord - Est) , 10.0"];
+  3 -- 4 [label = "(Est - Sud) , 2.0"];
+  4 -- 1 [label = "(Sud - Ouest) , 10.0"];
+  1 -- 3 [label = "(Ouest - Est) , 9.0"];
+}

@@ -1,0 +1,23 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * Operation.java in fr.irstea.adret.geographlab.plugins.modele
+ * 
+ */
+package fr.irstea.adret.geographlab.plugins.modele;
+
+import java.util.ArrayList;
+
+/**
+ * @author eric
+ *
+ */
+public class Operation {
+	
+	private String result;
+	private String theme;
+	private ArrayList<String> operand;
+	private ArrayList<Double> weight;
+	
+}

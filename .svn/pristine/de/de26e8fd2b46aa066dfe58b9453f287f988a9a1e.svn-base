@@ -1,0 +1,554 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm.outils;
+
+
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.AbstractTableModel;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.net.URL;
+
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesLegende;
+import fr.ign.cogit.geographlab.ihm.customdockingframes.ColorDockable;
+
+public class PanelLegend extends ColorDockable {
+	
+	boolean DEBUG = false;
+	
+	static JTable table;
+	
+	public static MainWindow parent;
+	
+	public static Object saveValueBeforeBeingChanged;
+	
+	MyTableModel model;
+	
+	Object[][] data;
+	
+	int nbCaissons = 6;
+	JTextField tNbCaissons;
+	JComboBox<String> cTypeDeLegende;
+	JComboBox<String> cNatureDeLegende;
+	JComboBox<String> cChoixDeCouleur;
+	
+	public JSlider slTailleNoeuds;
+	public JSlider slEpaisseurArcs;
+	public JSlider slBufferZonesAgregees;
+	
+	ImageIcon[] images;
+	String[] legendStrings;
+	
+	public PanelLegend(MainWindow parent) {
+		this(parent, "Légende", Color.WHITE, 1.0f);
+	}
+	
+	public PanelLegend(MainWindow mainWindow, String nom, Color couleur, float luminosite) {
+		super( nom, couleur, luminosite );
+		this.setLayout(new GridLayout(1, 0));
+		
+		PanelLegend.parent = mainWindow;
+		
+		saveValueBeforeBeingChanged = new String();
+		
+		this.model = new MyTableModel();
+		table = new JTable(this.model);
+		this.model.initValues();
+		table.setPreferredScrollableViewportSize(new Dimension(500, 70));
+		table.setFillsViewportHeight(true);
+		
+		table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent event) {
+				if (event.getValueIsAdjusting())
+					return;
+			}
+		});
+		
+		table.getModel().addTableModelListener(new TableModelListener() {
+			
+			@Override
+			public void tableChanged(TableModelEvent e) {
+				
+				int row = e.getFirstRow();
+				int column = e.getColumn();
+				MyTableModel localModel = (MyTableModel) e.getSource();
+				String columnName = localModel.getColumnName(column);
+				Object dataFromModel = localModel.getValueAt(row, column);
+				
+				switch (e.getColumn()) {
+					case 0: // Couleur
+					
+						break;
+					case 1: // Borne min
+						if (e.getFirstRow() != columnName.length()) {
+							PanelLegend.this.data[row][column] = dataFromModel;
+							if (row != e.getLastRow())
+								PanelLegend.this.data[row + 1][column + 1] = dataFromModel;
+						}
+						
+						break;
+					case 2: // Borne max
+						if (e.getFirstRow() != 0) {
+							PanelLegend.this.data[row][column] = dataFromModel;
+							PanelLegend.this.data[row - 1][column - 1] = dataFromModel;
+						}
+						break;
+					default:
+						break;
+				}
+				PanelLegend.getJTable().repaint();
+				
+				// Lecture des echelles dans la JTable
+				double nouvelleEchelle[] = new double[PanelLegend.this.data.length + 1];
+				
+				for (int i = 0; i < nouvelleEchelle.length - 1; i++) {
+					nouvelleEchelle[i] = ((Double) (PanelLegend.this.data[nouvelleEchelle.length - 2 - i][1])).doubleValue();
+				}
+				nouvelleEchelle[PanelLegend.this.data.length] = ((Double) (PanelLegend.this.data[0][2])).doubleValue();
+				
+				// Ecriture des echelles dans l'objet legende
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setEchelle(nouvelleEchelle);
+				
+				// Lecture des couleurs dans la JTable
+				Color nouvellesCouleurs[] = new Color[PanelLegend.this.data.length];
+				
+				for (int i = 0; i < nouvellesCouleurs.length; i++) {
+					nouvellesCouleurs[i] = ((Color) (PanelLegend.this.data[i][0]));
+				}
+				
+				// Ecriture des couleurs dans l'objet legende
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setColors(nouvellesCouleurs);
+				
+				updateLegendFromModel();
+				
+				PanelLegend.parent.panelActif.repaint();
+			}
+		});
+		
+		
+		
+		// table.setAutoCreateRowSorter(true);
+		
+		// Set up column sizes.
+		// initColumnSizes(table);
+		
+		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		table.setDefaultRenderer(Color.class, new ColorRenderer(true));
+		table.setDefaultEditor(Color.class, new ColorEditor());
+		
+		// Create the scroll pane and add the table to it.
+//		JScrollPane scrollPane = new JScrollPane(table);
+//		scrollPane.setAutoscrolls(true);
+		
+		JPanel localPanelTable = new JPanel();
+		JPanel localPanelButtonTop = new JPanel();
+		JPanel localPanelButtonMiddle = new JPanel();
+		JPanel localPanelColor = new JPanel();
+		JPanel localPanelButtonBottom = new JPanel();
+		JPanel localPanelTailleNoeud = new JPanel();
+		JPanel localPanelEpaisseurArc = new JPanel();
+		JPanel localPanelLargeurBufferZone = new JPanel();
+		
+		// Add buttons
+		JTextArea tNbCaissonsStatic = new JTextArea("Nombre de caissons :");
+		this.tNbCaissons = new JTextField("6");
+		
+		JButton bOk = new JButton("Ok");
+		bOk.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				int tempCaisson = Integer.parseInt(PanelLegend.this.tNbCaissons.getText());
+				
+				if(  tempCaisson > 2 && tempCaisson < 8 )
+					PanelLegend.this.nbCaissons = tempCaisson;
+				else
+					PanelLegend.this.tNbCaissons.setText("6");
+				
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setIntervallesDefaut(PanelLegend.this.nbCaissons);
+				updateLegendFromModel();
+				
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setLegendesNoeudsArcsZonePourValeurs();
+
+			}
+		});
+		
+		String[] comboStrings = { "Effectifs egaux", "Intervalles egaux", "Personnalisee" };
+		this.cTypeDeLegende = new JComboBox<String>(comboStrings);
+		this.cTypeDeLegende.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setTypeLegend((String) PanelLegend.this.cTypeDeLegende.getSelectedItem());
+				if (((String) PanelLegend.this.cTypeDeLegende.getSelectedItem()).compareTo("Intervalles egaux") == 0) {
+					PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setIntervallesDefaut(PanelLegend.this.nbCaissons);
+				}
+			}
+			
+		});
+		
+		String[] comboStrings2 = { "Sequentielle", "Divergente" };
+		this.cNatureDeLegende = new JComboBox<String>(comboStrings2);
+		this.cNatureDeLegende.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e) {
+				createPersoComboBox( PanelLegend.this.cNatureDeLegende.getSelectedIndex() );
+			}
+			
+		});
+
+		this.cChoixDeCouleur = new JComboBox<String>();
+		ComboBoxRenderer renderer = new ComboBoxRenderer();
+		this.cChoixDeCouleur.setRenderer(renderer);
+		
+		createPersoComboBox( PanelLegend.this.cNatureDeLegende.getSelectedIndex() );
+		
+		this.slTailleNoeuds = new JSlider(ConstantesApplication.vertexRadiusMin, ConstantesApplication.vertexRadiusMax, ConstantesApplication.vertexRadius);
+		this.slTailleNoeuds.setMinorTickSpacing(ConstantesApplication.vertexRadiusMin);
+		this.slTailleNoeuds.setMajorTickSpacing(ConstantesApplication.vertexRadiusMax);
+		this.slTailleNoeuds.setPaintTicks(true);
+		this.slTailleNoeuds.setPaintLabels(true);
+		this.slTailleNoeuds.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider source = (JSlider) e.getSource();
+				
+//				ConstantesApplication.vertexRadius = source.getValue();
+				PanelLegend.parent.panelActif.cst.vertexRadius = source.getValue();
+				PanelLegend.parent.panelActif.repaint();
+				
+			}
+		});
+		
+		this.slEpaisseurArcs = new JSlider(ConstantesApplication.edgeWidthMin, ConstantesApplication.edgeWidthMax, ConstantesApplication.edgeWidth);
+		this.slEpaisseurArcs.setMinorTickSpacing(ConstantesApplication.edgeWidthMin);
+		this.slEpaisseurArcs.setMajorTickSpacing(ConstantesApplication.edgeWidthMax);
+		this.slEpaisseurArcs.setPaintTicks(true);
+		this.slEpaisseurArcs.setPaintLabels(true);
+		this.slEpaisseurArcs.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider source = (JSlider) e.getSource();
+				
+//				ConstantesApplication.edgeWidth = source.getValue();
+				PanelLegend.parent.panelActif.cst.edgeWidth = source.getValue();
+				PanelLegend.parent.panelActif.repaint();
+				
+			}
+		});
+		
+		this.slBufferZonesAgregees = new JSlider(ConstantesApplication.bufferZoneAgregeeMin, ConstantesApplication.bufferZoneAgregeeMax, ConstantesApplication.bufferZoneAgregee);
+		this.slBufferZonesAgregees.setMinorTickSpacing(ConstantesApplication.bufferZoneAgregeeMin);
+		this.slBufferZonesAgregees.setMajorTickSpacing(ConstantesApplication.bufferZoneAgregeeMax);
+		this.slBufferZonesAgregees.setPaintTicks(true);
+		this.slBufferZonesAgregees.setPaintLabels(true);
+		this.slBufferZonesAgregees.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider source = (JSlider) e.getSource();
+				
+//				ConstantesApplication.bufferZoneAgregee = source.getValue();
+				PanelLegend.parent.panelActif.cst.bufferZoneAgregee = source.getValue();
+				PanelLegend.parent.panelActif.repaint();
+				
+			}
+		});
+		
+		// Add Component in Panels
+		localPanelTable.add(table);
+		
+		localPanelButtonBottom.setLayout(new GridLayout(3, 1));
+		localPanelButtonBottom.add(tNbCaissonsStatic);
+		localPanelButtonBottom.add(this.tNbCaissons);
+		localPanelButtonBottom.add(bOk);
+		
+		localPanelButtonMiddle.add(this.cTypeDeLegende);
+		localPanelColor.add(this.cNatureDeLegende);
+		localPanelColor.add(this.cChoixDeCouleur);
+		
+		localPanelTailleNoeud.add(new JTextField("Taille des noeuds"));
+		localPanelTailleNoeud.add(this.slTailleNoeuds);
+		localPanelEpaisseurArc.add(new JTextField("Taille des arcs"));
+		localPanelEpaisseurArc.add(this.slEpaisseurArcs);
+		localPanelLargeurBufferZone.add(new JTextField("Buffers des zones"));
+		localPanelLargeurBufferZone.add(this.slBufferZonesAgregees);
+		
+		// Add the scroll pane to this panel
+		this.setLayout(new FlowLayout(FlowLayout.LEFT));
+		add(localPanelButtonMiddle);
+		add(localPanelColor);
+		add(localPanelTable);
+		add(localPanelButtonTop);
+		add(localPanelButtonBottom);
+		add(localPanelTailleNoeud);
+		add(localPanelEpaisseurArc);
+		add(localPanelLargeurBufferZone);
+	}
+	
+	void createPersoComboBox(int typeLegende) {
+		
+		Integer[] intArray;
+		
+		if ( typeLegende  == 0 ) {
+			PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setNatureLegend(ConstantesLegende.natureLegendeSequentielle);
+			intArray = new Integer[ConstantesLegende.imagesCouleursSequentielles.length];
+			this.images = new ImageIcon[ConstantesLegende.imagesCouleursSequentielles.length];
+			this.legendStrings = new String[ConstantesLegende.imagesCouleursSequentielles.length];
+			for (int i = 0; i < intArray.length; i++) {
+				intArray[i] = new Integer(i);
+				this.images[i] = createImageIcon(getClass().getResource(ConstantesLegende.imagesCouleursSequentielles[i]));
+				this.legendStrings[i] = ConstantesLegende.textesCouleursSequentielles[i];
+			}
+		} else {
+			PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setNatureLegend(ConstantesLegende.natureLegendeDivergente);
+			intArray = new Integer[ConstantesLegende.imagesCouleursDivergeantes.length];
+			this.images = new ImageIcon[ConstantesLegende.imagesCouleursDivergeantes.length];
+			this.legendStrings = new String[ConstantesLegende.imagesCouleursDivergeantes.length];
+			for (int i = 0; i < intArray.length; i++) {
+				intArray[i] = new Integer(i);
+				this.images[i] = createImageIcon(getClass().getResource(ConstantesLegende.imagesCouleursDivergeantes[i]));
+				this.legendStrings[i] = ConstantesLegende.textesCouleursDivergeantes[i];
+			}
+		}
+		
+		this.cChoixDeCouleur.repaint();
+		
+		this.cChoixDeCouleur.setModel(new DefaultComboBoxModel(intArray));
+		
+//		this.cChoixDeCouleur = new JComboBox(intArray);
+		
+		this.cChoixDeCouleur.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+				PanelLegend.this.nbCaissons = Integer.parseInt(PanelLegend.this.tNbCaissons.getText());
+				
+				if ( PanelLegend.this.cNatureDeLegende.getSelectedIndex() == 0 ) {
+					// Légende Sequentielle
+					PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setColors(
+							ConstantesLegende.mesTabsDeCouleursSequentielles[PanelLegend.this.nbCaissons-3][PanelLegend.this.cChoixDeCouleur.getSelectedIndex()]
+					);
+					
+				}else{
+					// Légende Divergente 
+					PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setColors(
+							ConstantesLegende.mesTabsDeCouleursDivergentes[PanelLegend.this.nbCaissons-3][PanelLegend.this.cChoixDeCouleur.getSelectedIndex()]
+					);
+					
+				}
+				
+//				System.out.println("Couleur " + text + " n° " + PanelLegend.this.cChoixDeCouleur.getSelectedIndex() );
+//				System.out.print("[ ");
+//				for (Color iterColor : PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().getColors()) {
+//					
+//					System.out.print("(" + iterColor.getRed() + "," + iterColor.getGreen() + "," + iterColor.getBlue() + ") " );
+//				}
+//				System.out.println(" ]");
+				
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setLegendesNoeudsArcsZonePourValeurs();
+				updateLegendFromModel();
+				
+			}
+			
+		});
+	
+	}
+	
+	private static ImageIcon createImageIcon(URL path) {
+			return new ImageIcon(path);
+	}
+	
+	public void updateLegendFromModel() {
+		
+		Color[] colors;
+		int choix;
+		
+		if( PanelLegend.this.cChoixDeCouleur == null)
+			choix = 0;
+		else
+			choix = PanelLegend.this.cChoixDeCouleur.getSelectedIndex();
+		
+		if ( PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().getNatureLegend() == ConstantesLegende.natureLegendeSequentielle ) {
+			colors = ConstantesLegende.mesTabsDeCouleursSequentielles[PanelLegend.this.nbCaissons-3][choix];
+			
+		}else{
+			colors = ConstantesLegende.mesTabsDeCouleursDivergentes[PanelLegend.this.nbCaissons-3][choix];
+		}
+		
+//		Color[] colors = PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().getColors();
+		PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().setEchelle(
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().min,
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().max,
+				this.nbCaissons,
+				PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().typeDeLegende);
+		
+		double[] echelle = PanelLegend.parent.panelActif.carte.getLegendeDeLaCarte().getEchelle();
+		
+		PanelLegend.this.data = new Object[this.nbCaissons][3];
+		
+		for (int i = 0; i < this.nbCaissons; i++) {
+			PanelLegend.this.data[i][0] = colors[i];
+			PanelLegend.this.data[i][1] = new Double(echelle[(this.nbCaissons - 1) - i]);
+			PanelLegend.this.data[i][2] = new Double(echelle[(this.nbCaissons - 1) - i + 1]);
+		}
+		PanelLegend.table.repaint();
+	}
+	
+	public static JTable getJTable() {
+		return table;
+	}
+	
+	public static void setJTable(JTable tNomODs) {
+		table = tNomODs;
+	}
+	
+	public static void setModelDataSize(int taille) {
+		((MyTableModel) table.getModel()).setDataSize(taille);
+	}
+	
+	class MyTableModel extends AbstractTableModel {
+		
+		private static final long serialVersionUID = 1L;
+		
+		private String[] columnNames = { "Couleurs", "Valeur min", "Valeur max" };
+		
+		// public final Object[] longValues = {new Color(255,255,255),
+		// "Nom d'un arc qui est long et meme plus long que ca", "1000000"};
+		
+		public void initValues() {
+			if (PanelLegend.parent.panelActif != null) {
+				updateLegendFromModel();
+			}
+		}
+		
+		public int getColumnCount() {
+			return this.columnNames.length;
+		}
+		
+		public int getRowCount() {
+			return PanelLegend.this.data.length;
+		}
+		
+		@Override
+		public String getColumnName(int col) {
+			return this.columnNames[col];
+		}
+		
+		/*
+		 * JTable uses this method to determine the default renderer/ editor for
+		 * each cell. If we didn't implement this method, then the last column
+		 * would contain text ("true"/"false"), rather than a check box.
+		 */
+		@Override
+		public Class getColumnClass(int c) {
+			return getValueAt(0, c).getClass();
+		}
+		
+		public Object getValueAt(int row, int col) {
+			return PanelLegend.this.data[row][col];
+		}
+		
+		public void setDataSize(int taille) {
+			PanelLegend.this.data = new Object[taille][2];
+		}
+		
+		@Override
+		public boolean isCellEditable(int row, int col) {
+			return true;
+		}
+		
+		@Override
+		public void setValueAt(Object value, int row, int col) {
+			if (PanelLegend.this.DEBUG) {
+				System.out.println("Setting value at " + row + "," + col + " to " + value + " (an instance of " + value.getClass() + ")");
+			}
+			
+			saveValueBeforeBeingChanged = table.getValueAt(row, col);
+			
+			PanelLegend.this.data[row][col] = value;
+			fireTableCellUpdated(row, col);
+			
+			if (PanelLegend.this.DEBUG) {
+				System.out.println("New value of data:");
+				printDebugData();
+			}
+		}
+		
+		private void printDebugData() {
+			int numRows = getRowCount();
+			int numCols = getColumnCount();
+			
+			for (int i = 0; i < numRows; i++) {
+				System.out.print("    row " + i + ":");
+				for (int j = 0; j < numCols; j++) {
+					System.out.print("  " + PanelLegend.this.data[i][j]);
+				}
+				System.out.println();
+			}
+			System.out.println("--------------------------");
+		}
+	}
+	
+	class ComboBoxRenderer extends JLabel implements ListCellRenderer<Object> {
+
+		private static final long serialVersionUID = -3856751714780265091L;
+
+		public ComboBoxRenderer() {
+			setOpaque(true);
+			setHorizontalAlignment(CENTER);
+			setVerticalAlignment(CENTER);
+		}
+		
+		public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+
+			final int selectedIndex = ((Integer) value).intValue();
+			
+			if (isSelected) {
+				setBackground(list.getSelectionBackground());
+				setForeground(list.getSelectionForeground());
+			} else {
+				setBackground(list.getBackground());
+				setForeground(list.getForeground());
+			}
+			
+			final ImageIcon icon = PanelLegend.this.images[selectedIndex];
+//			final String pet = PanelLegend.this.legendStrings[selectedIndex];
+			setIcon(icon);
+
+			return this;
+		}
+		
+	}
+	
+}

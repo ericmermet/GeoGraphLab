@@ -1,0 +1,500 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm;
+
+import fr.ign.cogit.geographlab.algo.geom.EnveloppeConvexe;
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.factories.GestionnaireDeCouches;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesVisualisation;
+import fr.ign.cogit.geographlab.ihm.customdockingframes.JPanelExploColorDockable;
+import fr.ign.cogit.geographlab.ihm.events.KeyEvents;
+import fr.ign.cogit.geographlab.ihm.events.MouseEvents;
+import fr.ign.cogit.geographlab.visu.ArcGraphique;
+import fr.ign.cogit.geographlab.visu.NoeudGraphique;
+import fr.ign.cogit.geographlab.visu.ObjetGraphique;
+import fr.ign.cogit.geographlab.visu.ZoneAgregee;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
+
+/**
+ * Classe graphique du JPanel d'affichage d'un reseau
+ * 
+ * @author mermet
+ * 
+ */
+public class PanelMainDraw extends JPanel {
+	
+	private static final long serialVersionUID = 1L;
+
+	public MainWindow parent;
+	
+	private int winID;
+	private String nom;
+	
+	private Color defaultColor = Color.WHITE;
+	
+	private int outilsSelectionne;
+	public List<ObjetGraphique> listOfSelectedObjects;
+	
+	private AffineTransform at = new AffineTransform();
+	public double scaleFactor = 1.0;
+	
+	private Graphics2D gC2D;
+	
+	public Shape ligneEntreDeuxNoeuds = new Line2D.Double(0, 0, 0, 0);
+	public Line2D.Double lignePartageNordSudHorizontal = new Line2D.Double(0, 0, 500, 500), lignePartageEstOuestVertical = new Line2D.Double(500, 0, 0, 500);
+	public Image backGroundImage;
+	
+	public JTextArea textMove;
+	
+	// Une carte dans le panel de la vue
+	public Carte carte;
+	public ArrayList<Carte> gestionnaireDeCartesParentes;
+	
+	public GestionnaireDeCouches couchesDeCartes;
+	
+	public JPanelExploColorDockable panelExplo;
+	
+	public ConstantesVisualisation cst = new ConstantesVisualisation();
+	
+	private GeometryFactory geomFac = new GeometryFactory();
+	
+	public PanelMainDraw(MainWindow parent) {
+		this(parent, "Nouvelle vue 0", 0 );
+	}
+	
+	public PanelMainDraw(MainWindow parent, String nom, int id) {
+		super();
+		this.parent = parent;
+		
+		this.setBackground(Color.WHITE);
+		this.setOpaque(false);
+		this.setDoubleBuffered(true);
+		this.winID = id;
+		this.nom = new String(nom);
+		
+		this.outilsSelectionne = ConstantesApplication.selectionMode;
+		this.listOfSelectedObjects = new ArrayList<ObjetGraphique>();
+		
+		this.addMouseListener(new MouseEvents(this));
+		this.addMouseMotionListener(new MouseEvents(this));
+		this.addMouseWheelListener(new MouseEvents(this));
+		
+		this.setFocusable(true);
+		this.requestFocus();
+		this.setVisible(true);
+		
+		this.addKeyListener(new KeyEvents(this));
+
+		this.couchesDeCartes = new GestionnaireDeCouches(this);
+		
+		this.panelExplo = new JPanelExploColorDockable(parent, "Exploration graphique", this.defaultColor, 1.0f);
+		
+		this.carte = new Carte(this);
+		
+	}
+	
+	public String getNom() {
+		return this.nom;
+	}
+	
+	public void setNom(String nom) {
+		this.nom = nom;
+	}
+	
+	public int getOutilsSelectionne() {
+		return this.outilsSelectionne;
+	}
+	
+	public void setOutilsSelectionne(int outilsSelectionne) {
+		this.outilsSelectionne = outilsSelectionne;
+	}
+	
+	public int getID() {
+		return this.winID;
+	}
+	
+	public void setAt(AffineTransform at) {
+		this.at = at;
+	}
+	
+	public AffineTransform getAt() {
+		return this.at;
+	}
+	
+	public void centreVue() {
+		// Mise en forme selon la taille du reseau translation et scale
+		
+		this.getAt().setToIdentity();
+		
+		//Translate
+		Point[] pointDimensionVueReseau = this.parent.getPanelMainDrawActif().carte.getVueDuGraphe().getDimensionVue();
+		double dimensionWidthVueReseau = pointDimensionVueReseau[1].getX() - pointDimensionVueReseau[0].getX();
+		double dimensionHeightVueReseau = pointDimensionVueReseau[1].getY() - pointDimensionVueReseau[0].getY();
+		double xMilieuVueReseauX = (pointDimensionVueReseau[1].getX() + pointDimensionVueReseau[0].getX()) / 2;
+		double yMilieuVueReseauY = (pointDimensionVueReseau[1].getY() + pointDimensionVueReseau[0].getY()) / 2;
+		
+//		Une petite marge de 4% pour les noeuds en bordure
+		double dimensionWidthVueReseauMarge = Math.rint(dimensionWidthVueReseau + dimensionWidthVueReseau * 7 / 100);
+		double dimensionHeightVueReseauMarge = Math.rint(dimensionHeightVueReseau + dimensionHeightVueReseau * 7                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                / 100);
+		
+//		System.out.println("Dimension du reseau : pointXYMin ( " + pointDimensionVueReseau[0].getX() + " , " + pointDimensionVueReseau[0].getY() + " )");
+//		System.out.println("                    : pointXYMax ( " + pointDimensionVueReseau[1].getX() + " , " + pointDimensionVueReseau[1].getY() + " )");
+//		System.out.println("                    : largeur : " + dimensionWidthVueReseau);
+//		System.out.println("                    : hauteur : " + dimensionHeightVueReseau);
+//		System.out.println("                    : largeurMarge : " + dimensionWidthVueReseauMarge);
+//		System.out.println("                    : hauteurMarge : " + dimensionHeightVueReseauMarge);
+//		System.out.println("                    : XmilieuReseauX : " + xMilieuVueReseauX);
+//		System.out.println("                    : YmilieuReseauY : " + yMilieuVueReseauY);
+//		System.out.println("");
+	
+		
+		Dimension dimensionFenetre = this.parent.panelActif.getSize();
+		double mileuPanelX = dimensionFenetre.getWidth() / 2;
+		double mileuPanelY = dimensionFenetre.getHeight() / 2;
+		
+//		System.out.println("Dimension de la fenetre : largeur : " + dimensionFenetre.getWidth());
+//		System.out.println("                        : hauteur : " + dimensionFenetre.getHeight());
+//		System.out.println("                        : XmilieuFenetreX : " + mileuPanelX);
+//		System.out.println("                        : YmilieuFenetreY : " + mileuPanelY);
+//		System.out.println("");
+
+		double xDeltaDecalage = (mileuPanelX - xMilieuVueReseauX); //Pas en valeur absolue
+		double yDeltaDecalage = (mileuPanelY - yMilieuVueReseauY);
+		
+		//Correction temporaire
+		this.getAt().translate(mileuPanelX, mileuPanelY);
+		
+		Coordinate coordinate = new Coordinate(xDeltaDecalage, yDeltaDecalage);
+		Point pDeltaTranslate = this.geomFac.createPoint(coordinate);
+		
+//		System.out.println("Decalage a effectuer : ( " + pDeltaTranslate.getX() + " , " + pDeltaTranslate.getY() + " )");
+		
+		// Scaling
+//		double scaleFactorCentreVue = Math.max( dimensionFenetre.height/dimensionHeightVueReseauMarge,
+//												dimensionFenetre.width/dimensionWidthVueReseauMarge);
+		
+		double scaleFactorCentreVue2 = Math.max( dimensionHeightVueReseauMarge/dimensionFenetre.height,
+												 dimensionWidthVueReseauMarge/dimensionFenetre.width);
+		
+//		System.out.println(scaleFactorCentreVue + " - "  + scaleFactorCentreVue2);
+		
+		this.scaleFactor = 1/scaleFactorCentreVue2;
+		
+//		this.scaleFactor = (scaleFactorCentreVue + scaleFactorCentreVue2) / 2;
+		
+//		this.getAt().scale(this.scaleFactor, this.scaleFactor);
+//		this.getAt().translate(pDeltaTranslate.getX(), pDeltaTranslate.getY());
+////		this.getAt().concatenate(this.getAt());
+//		this.revalidate();
+		
+//		Point pAtranslater = new Point((int) (pDeltaTranslate.getX()*this.scaleFactor), (int)(pDeltaTranslate.getY()*this.scaleFactor));
+//		centreVue(pAtranslater);
+		
+//		centreVue(new Point(-(int)pDeltaTranslate.getX(), -(int)pDeltaTranslate.getY()), 1.0);
+		this.getAt().scale(this.scaleFactor, this.scaleFactor);
+		
+		Coordinate coordinate2 = new Coordinate(pDeltaTranslate.getX(), pDeltaTranslate.getY());
+		Point pCentreVue = this.geomFac.createPoint(coordinate2);
+		
+		centreVueSurUnPoint(pCentreVue);
+
+//		this.getAt().concatenate(this.getAt());
+		
+//		int dX = (int) (mileuPanelX/2); //- (int) (milieuVueX.intValue()/2);
+//		int dY = (int) (mileuPanelY/2); //- (int) (milieuVueY.intValue()/2);
+		
+//		centreVue(new Point(dX, dY), scaleFactorCentreVue);
+		
+//		centreVue(new Point(milieuVueX.intValue(), milieuVueY.intValue()), 1.0);
+		
+		// this.getAt().setToScale(dimensionPoints.getWidth()/dimensionPanel.getWidth(),
+		// dimensionPoints.getHeight()/dimensionPanel.getHeight());
+		// this.getAt().translate(-(milieuVueX.doubleValue()-scaleFactor*mileuPanelX.doubleValue()),
+		// -(milieuVueY.doubleValue()-scaleFactor*mileuPanelY.doubleValue()));
+		
+		this.repaint();
+		
+	}
+	
+	public void centreVueSurUnPoint(Point p1) {
+		this.getAt().translate(p1.getX(), p1.getY());
+//		this.getAt().concatenate(this.getAt());
+		
+		this.revalidate();
+		this.repaint();
+	}
+	
+	public void centreVue(Point p1, double scale) {
+		
+		Point2D p2 = null;
+		java.awt.Point p1_2D = new java.awt.Point((int)p1.getX(), (int)p1.getY());
+		
+		try {
+			p2 = this.getAt().inverseTransform(p1_2D, null);
+		} catch (NoninvertibleTransformException ex) {
+			// should not get here
+			ex.printStackTrace();
+			return;
+		}
+		
+//		System.out.println(this.scaleFactor);
+		
+		this.getAt().setToIdentity();
+		this.getAt().translate(p1.getX(), p1.getY());
+		this.getAt().scale(this.scaleFactor, this.scaleFactor);
+		this.getAt().translate(-p2.getX(), -p2.getY());
+		
+		this.revalidate();
+		this.repaint();
+		
+	}
+	
+	public void centreVue(Point p1) {
+		// Filtrage min
+		this.scaleFactor = Math.max( 0.0000001, this.scaleFactor);
+		// Filtrage max
+		this.scaleFactor = Math.min(10000000, this.scaleFactor);
+		centreVue(p1, this.scaleFactor);
+	}
+	
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paint(g);
+	}
+	
+	@Override
+	public void paint(Graphics gC) {
+		
+		setGC2D((Graphics2D) gC);
+
+		this.gC2D.setColor(this.defaultColor);
+		this.gC2D.fillRect(0, 0, getWidth(), getHeight());
+		
+		// L'anti-aliasing ralenti l'affichage et notamment le move-drag
+		if (!ConstantesApplication.dragEnabled) {
+			this.gC2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			this.gC2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+			this.gC2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		}
+		
+		// AffineTransform
+		AffineTransform transform = this.gC2D.getTransform();
+		// Concatener les transformations pour eviter le probleme du decalage !!!
+		transform.concatenate(this.getAt());
+		this.gC2D.setTransform(transform); 
+		
+		// L'image en fond
+		if (this.carte.variablesDeCarte.afficheImageDeFond) {
+			
+			// GraphicsEnvironment ge =
+			// GraphicsEnvironment.getLocalGraphicsEnvironment();
+			// GraphicsDevice[] gs = ge.getScreenDevices();
+			//
+			// GraphicsConfiguration[] gcI = gs.
+			// BufferedImage bI =
+			// gcI.createCompatibleImage(this.backGroundImage.getWidth(this),
+			// this.backGroundImage.getHeight(this), Transparency.TRANSLUCENT);
+			
+			this.gC2D.drawImage(this.backGroundImage, 0, 0, this);
+		}
+		
+		if (this.carte.variablesDeCarte.afficheLigneCentre) {
+			this.gC2D.setColor(Color.RED);
+			this.gC2D.draw(this.lignePartageEstOuestVertical);
+			this.gC2D.draw(this.lignePartageNordSudHorizontal);
+		}
+		
+		// Enveloppe Convexe du reseau
+		if (this.carte.variablesDeCarte.afficheEnveloppeConvexe) {
+			EnveloppeConvexe ev = new EnveloppeConvexe(this.carte.getNom() + "_enveloppeConvexe", this.carte.getGraphe());
+			
+			this.gC2D.setColor(this.carte.variablesDeCarte.convexHullColor);
+			
+			this.gC2D.fill(ev.getEnveloppePolygone("Buffer"));
+			
+		}
+		
+		// Cellule de Voronoi via les noeuds (v2)
+		if (this.carte.variablesDeCarte.afficheVoronoi & this.carte.getPolygonesDeVoronoi() != null) {
+			
+			this.gC2D.setColor(this.carte.variablesDeCarte.voronoiCellColor);
+			this.gC2D.setStroke(new BasicStroke(3.0f));
+			
+			for (Noeud iterNoeud : this.carte.getGraphe().getNoeuds()) {
+				if( this.carte.variablesDeCarte.afficheCouleurVoronoi == false )
+					this.gC2D.draw(iterNoeud.getNoeudGraphique().getCelluleDeVoronoi().area);
+				else {
+					this.gC2D.setColor(iterNoeud.getNoeudGraphique().getCouleurPourIndicateur(this.carte.getNomIndicateurCourant()));
+					this.gC2D.fill(iterNoeud.getNoeudGraphique().getCelluleDeVoronoi().area);
+				}
+			}
+
+		}
+		
+		// Puis les agregations en dessous du reseau
+		// TODO gerer la transparence...
+		if (this.carte.variablesDeCarte.afficheAgregation) {
+			
+			for (ZoneAgregee iterZone : this.carte.getVueDuGraphe().getZonesAgregees()) {
+				
+				Color couleurDeLaZone = iterZone.getColor();
+				
+				// Visibilite des noeuds et arcs en fonction de la checkBox Sous reseau
+				for (NoeudGraphique iterNoeudDeLaZone : iterZone.getNoeuds())
+					iterNoeudDeLaZone.setVisibility(this.carte.variablesDeCarte.afficheSousReseau);
+				for (ArcGraphique iterArcDeLaZone : iterZone.getArcs())
+					iterArcDeLaZone.setVisibility(this.carte.variablesDeCarte.afficheSousReseau);
+				
+				if (this.carte.variablesDeCarte.affichageEnCours.compareTo("Vue Normale") != 0) {
+					// Alors on est dans un affichage particulier et il faut colorier les zones agregees
+					Double valeurIndiceZone = iterZone.setValeursGraphiquesMoyenne();
+					couleurDeLaZone = this.parent.getPanelMainDrawActif().carte.getLegendeDeLaCarte().getColorLegendeEffectifsEgaux(valeurIndiceZone.doubleValue());
+					
+				}
+				
+				this.gC2D.setColor(couleurDeLaZone);
+				
+				iterZone.paintComponent(this.gC2D, this.cst.bufferZoneAgregee);
+				
+			}
+		}
+		
+		// Puis le reseau
+		if (this.carte.variablesDeCarte.afficheGraphe) {
+			// D'abord les arcs
+			for (ArcGraphique iterArcGraphique : this.carte.getVueDuGraphe().getArcsGraphiques()) {
+				if (iterArcGraphique.isVisible()) {
+
+					if (iterArcGraphique.isSelected()) {
+
+						this.gC2D.setColor(this.carte.variablesDeCarte.selectedColorEdge);
+					} else {
+						if (this.carte.variablesDeCarte.affichageEnCours.compareTo("Vue Normale") == 0 | this.carte.variablesDeCarte.affichageEnCours.compareTo("Vue Eloignement Moyen") == 0)
+//							this.gC2D.setColor(iterArcGraphique.getColor());
+							this.gC2D.setColor(this.carte.getColorLayer());
+						else {
+
+							this.gC2D.setColor(iterArcGraphique.getCouleurPourIndicateur(this.carte.getNomIndicateurCourant()));
+						}
+					}
+					iterArcGraphique.paintComponent(this.gC2D,
+							this.carte.variablesDeCarte.afficheGrapheNonDirige,
+							this.carte.variablesDeCarte.afficheGeometrie,
+							this.cst.vertexRadius, this.cst.edgeWidth);
+				}
+				
+			}
+			
+			// Puis les noeuds pour qu'ils soient au dessus
+			for (NoeudGraphique iterNoeudGraphique : this.carte.getVueDuGraphe().getNoeudsGraphiques()) {
+				if (iterNoeudGraphique.isVisible()) {
+					
+					this.gC2D.setStroke(new BasicStroke(1.0f));
+					
+					if (iterNoeudGraphique.isSelected()) {
+						this.gC2D.setColor(this.carte.variablesDeCarte.selectedColorVertex);
+						
+						if( iterNoeudGraphique.isSelectedDestination())
+							this.gC2D.setColor(this.carte.variablesDeCarte.selectedColorVertexDestination);
+						if( iterNoeudGraphique.isSelectedOrigine())
+							this.gC2D.setColor(this.carte.variablesDeCarte.selectedColorVertexOrigine);
+						
+					} else {
+						if (this.carte.variablesDeCarte.affichageEnCours.compareTo("Vue Normale") == 0) {
+							this.gC2D.setColor(iterNoeudGraphique.getColor());
+						} else {
+							this.gC2D.setColor(iterNoeudGraphique.getCouleurPourIndicateur(this.carte.getNomIndicateurCourant()));
+						}
+					}
+
+					iterNoeudGraphique.paintComponent(this.gC2D, this.cst.vertexRadius);
+				}
+			}
+		}
+		
+		// Le reseau de Delaunay
+		if (this.carte.variablesDeCarte.afficheGrapheDelaunay) {
+			// D'abord les arcs
+			for (ArcGraphique iterArcGraphique : this.carte.getVueDuGrapheDeReference().getArcsGraphiques()) {
+				if (iterArcGraphique.isVisible()) {
+					this.gC2D.setStroke(new BasicStroke(3.0f));
+					if (iterArcGraphique.isSelected()) {
+						this.gC2D.setColor(this.carte.variablesDeCarte.selectedColorEdge);
+					} else {
+						this.gC2D.setColor(this.carte.variablesDeCarte.edgeDelaunayColor);
+					}
+
+					iterArcGraphique.paintComponent(this.gC2D,
+							this.carte.variablesDeCarte.afficheGrapheNonDirige,
+							this.carte.variablesDeCarte.afficheGeometrie,
+							this.cst.vertexRadius, this.cst.edgeWidth);
+				}
+			}
+			
+			// Puis les noeuds pour qu'ils soient au dessus
+			for (NoeudGraphique iterNoeudGraphique : this.carte.getVueDuGrapheDeReference().getNoeudsGraphiques()) {
+				if (iterNoeudGraphique.isVisible()) {
+					this.gC2D.setStroke(new BasicStroke(1.0f));
+					if (iterNoeudGraphique.isSelected()) {
+						this.gC2D.setColor(this.carte.variablesDeCarte.selectedColorVertex);
+					} else {
+						this.gC2D.setColor(this.carte.variablesDeCarte.vertexDelaunayColor);
+					}
+					
+					iterNoeudGraphique.paintComponent(this.gC2D, this.cst.vertexRadius);
+				}
+			}
+		}
+		
+		// Affichage des dessins de construction (plus fluide de faire ca ici que dans MouseEvents...)
+		this.gC2D.setStroke(new BasicStroke(3.0f));
+		this.gC2D.draw(this.ligneEntreDeuxNoeuds);
+		this.ligneEntreDeuxNoeuds = new Line2D.Double(0, 0, 0, 0);
+		
+//		this.gC2D.dispose();
+//		System.gc();
+	}
+	
+	public void setGC2D(Graphics2D gC2D) {
+		this.gC2D = gC2D;
+	}
+	
+	public Graphics2D getGC2D() {
+		return (Graphics2D)this.getGraphics();
+	}
+
+	/**
+	 * @return the panel
+	 */
+	public JPanel getPanel() {
+		return this;
+	}
+}

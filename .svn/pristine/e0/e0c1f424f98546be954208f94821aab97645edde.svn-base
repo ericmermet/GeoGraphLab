@@ -1,0 +1,126 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * HierarchicalAnalysis.java in fr.irstea.adret.geographlab.plugins.ihm.exploration
+ * 
+ */
+package fr.irstea.adret.geographlab.plugins.ihm.exploration;
+
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.ihm.PanelMainDraw;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesExploration;
+import fr.irstea.adret.geographlab.plugins.modele.Indicator;
+import fr.irstea.adret.geographlab.plugins.modele.Operation;
+import fr.irstea.adret.geographlab.plugins.ihm.constantes.ConstantesExplorationIrstea;
+import fr.irstea.adret.geographlab.plugins.ihm.exploration.BlocOperationMesure;
+
+/**
+ * @author eric
+ *
+ */
+public class HierarchicalAnalysis {
+	
+	PanelMainDraw mainActivePanel;
+	ArrayList<Indicator> listIndicators;
+	ArrayList<Operation> listOperations;
+	HashSet<String> listThemes = new HashSet<String>();
+	HashMap<String, Carte> listMaps = new HashMap<String, Carte>();
+	
+	public HierarchicalAnalysis(PanelMainDraw pmd, ArrayList<Indicator> listIndicators, ArrayList<Operation> listOperations) {
+		this.mainActivePanel = pmd;
+		this.listIndicators = listIndicators;
+		this.listOperations = listOperations;
+		
+		//Retrieve all themes
+		for (Indicator indicator : listIndicators) {
+			this.listThemes.add(indicator.getTheme());
+		}	
+		
+	}
+	
+	public void createIndicators(List<String> mapsNames) {
+		
+		//Creation d'un nombre de cartes en consequence -1 (une carte est deja creee par defaut)
+		//Mais d'abord on enleve les cartes parentes du gestionnaire de couches
+		this.mainActivePanel.couchesDeCartes.retirerToutesLesChouchesParentes();
+		
+		for (String theme : this.listThemes) {
+			for (Indicator indicator: this.listIndicators) {
+				
+				//If same theme
+				if( indicator.getTheme().compareTo(theme) == 0) {
+					
+					//Add map if same name as indicator
+					for (String mapName : mapsNames) {
+						if( indicator.getAttribute_name().compareTo(mapName) == 0) {
+							Carte carteTemp = new Carte(this.mainActivePanel);
+							carteTemp.setNom(mapName);
+							carteTemp.setNomIndicateurCourant(carteTemp.getNom());
+							this.listMaps.put(mapName, carteTemp);
+							//Add here code to highlight theme
+							//TODO
+						}
+					}
+				}
+				
+			}
+		}
+		
+		//		for (int i = 0; i < mapsNames.size(); i++) {
+		//			Carte carteTemp = new Carte(this.mainActivePanel);
+		//			carteTemp.setNom(mapsNames.get(i));
+		//			carteTemp.setNomIndicateurCourant(carteTemp.getNom());
+		//			//L'ajout de cartes dans le gestionnaire est implicite et est effectue a la creation de la carte
+		//			//				this.parent.couchesDeCartes.ajouterUneCoucheCarte(carteTemp);
+		//		}
+		
+	}
+	
+	public void createOperations(ArrayList<Operation> listOperations) {
+		
+		for (Operation operation : listOperations) {
+			
+			ArrayList<Carte> listCartes = new ArrayList<Carte>();
+			int moyPosY = 0;
+			int posX = 200;
+			int i = 0;
+			
+			for (String operande: operation.getOperands()) {
+				
+				Carte carteTemp = this.listMaps.get(operande);
+				
+				Point p = carteTemp.carteExplo.getpXY();
+				posX = p.x;
+				moyPosY += p.y;
+				i++;
+				
+				listCartes.add(carteTemp);
+				
+//				carteTemp.carteExplo.getConnecteurEntreeMesure();
+				
+			}
+			
+			moyPosY /= i;
+			
+			BlocOperationMesure blockWeightedSum = new BlocOperationMesure(this.mainActivePanel.panelExplo.getJPanel(), 
+					ConstantesExplorationIrstea.typeOperationSommePonderee, 
+					listCartes,
+					operation.getWeight(),
+					operation.getResult());
+			
+			//Add the new measure block in graphical language panel
+			this.mainActivePanel.panelExplo.getJPanel().operations.ajouterUneOperation(blockWeightedSum);
+			blockWeightedSum.setpXY(new Point(posX + 200, moyPosY));
+			blockWeightedSum.setRectanglesGenericLayer(blockWeightedSum.getpXY());
+			
+		}
+	}
+		
+}

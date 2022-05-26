@@ -1,0 +1,384 @@
+ConstantesApplication.0=\#FAFBEF
+ConstantesApplication.2=0.2.5
+ConstantesApplication.3=GeoGraphLab 
+ConstantesApplication.4=\ by Eric Mermet (eric.mermet@gmail.com)\n
+ConstantesApplication.5=\ Laboratoire COGIT-IGN (2007-2012) http://recherche.ign.fr/labos/cogit/cv.php?nom=Mermet \n
+ConstantesApplication.6=\ Graph-it (2013-2014) http://www.graph-it.io
+ConstantesApplication.7=
+ConstantesApplication.normalView=Vue Normale
+
+FileOperationOpenShape.0=\ objets dans le fichier shapefile 
+FileOperationOpenShape.1=Feature n°
+FileOperationOpenShape.10=exception 2
+FileOperationOpenShape.11=exception 3
+FileOperationOpenShape.12=exception 4
+FileOperationOpenShape.13=Temps de chargement du fichier Shape (ms):
+FileOperationOpenShape.14=nb Noeuds = 
+FileOperationOpenShape.15=\ nb arcs = 
+FileOperationOpenShape.2=ATTENTION : Geometrie differente de LineString ou MultiLineString
+FileOperationOpenShape.3=ATTENTION : Geometrie differente de LineString ou MultiLineString
+FileOperationOpenShape.4=Inverse
+FileOperationOpenShape.5=-
+FileOperationOpenShape.6=Dist_polylignes
+FileOperationOpenShape.7=Dist_euclidiennes
+FileOperationOpenShape.8=Erreur de lecture 
+FileOperationOpenShape.9=exception 1
+
+MainWindow.0=fr
+MainWindow.1=FR
+MainWindow.10=img/mainIcon.jpg
+MainWindow.11=GeoGraphLab
+MainWindow.12=split
+MainWindow.15=station
+MainWindow.2=en
+MainWindow.3=EN
+MainWindow.4=en
+MainWindow.5=US
+MainWindow.6=fr.ign.cogit.geographlab.lang.messages
+MainWindow.7=GeoGraphLab v
+MainWindow.8=\ Mo (free) /
+MainWindow.9=\ Mo (total)
+MainWindow.messageConfirm=Confirmation
+MainWindow.messageQuit=Voulez-vous vraiment quitter ?
+MainWindow.pNameAgregation=Agrégations
+MainWindow.pNameConsole=Console
+MainWindow.pNameEdgeList=Liste des noeuds
+MainWindow.pNameLayerManager=Gestionnaire de Couches
+MainWindow.pNameLegend=Légende
+MainWindow.pNameNodesList=Liste des arcs
+MainWindow.pNameODList=Liste des OD
+MainWindow.pNameTools=Outils
+MainWindow.pNameTopoIndicators=Indicateurs Topologiques
+
+MenuBar.mFile=Fichier
+MenuBar.mNew=Nouveau Reseau
+MenuBar.mNewTab=Nouvel Onglet
+MenuBar.mOpen=Ouvrir
+MenuBar.mOpenXLS=Ouvrir des fichiers XLS...
+MenuBar.mOpenDOTPOS=Ouvrir des fichiers DOT/POS...
+MenuBar.mOpenShape=Ouvrir des fichiers Shape...
+MenuBar.mOpenShapePoints=Charger couche de points (nom + ponderation)...
+MenuBar.mOpenShapeODPoints=Charger Shape OD...
+MenuBar.mExport=Exporter
+MenuBar.mExportDOT=DOT...
+MenuBar.mExportTLP=TLP...
+MenuBar.mExportSVG=SVG...
+MenuBar.mExportSHP=SHP...
+MenuBar.mQuit=Quitter
+
+MenuBar.14=Outils
+MenuBar.15=Indicateurs
+MenuBar.16=Identifier les composantes connexes
+MenuBar.17=Calculer les barres Nord et Sud
+MenuBar.18=Liberer la memoire
+MenuBar.19=Centralite
+
+MenuBar.20=Centralite Intermediaire
+MenuBar.20_1=Centralité Spanning Tree (1 noeud)
+MenuBar.20_2=Centralité Spanning Tree (complète)
+MenuBar.21=Centralite de Proximite
+MenuBar.22=Accessibilite
+MenuBar.23=Indice de Shimbel
+MenuBar.24=Eloignement
+MenuBar.25=Eloignement Moyen
+
+MenuBar.26=Eloignement Minimum
+MenuBar.27=Eloignement Maximum
+MenuBar.28=Circuite
+MenuBar.29=Flux
+
+MenuBar.30=Centralite Probit
+MenuBar.31=Topologique
+MenuBar.mGeometrie=Géométrique
+MenuBar.32=Centralite de Degre
+MenuBar.33=Centralite de Pouvoir
+MenuBar.34=Triangles
+MenuBar.35=Carres
+MenuBar.36=Chemins de contournement
+MenuBar.37=Empan
+MenuBar.38=Rayon Proximal
+MenuBar.39=Rayon Distal
+
+MenuBar.40=K Closest First Tree
+MenuBar.41=Autres
+MenuBar.42=K Plus courts chemins superposes
+MenuBar.43=Flux PCC
+MenuBar.44=Theorie des graphes
+MenuBar.45=Chemin Eulerien
+MenuBar.46=Chemin Hamiltonien
+MenuBar.47=Arbres
+MenuBar.48=Arbre Couvrant de Poids Minimum (Kruskal)
+MenuBar.49=Arbre Couvrant des plus courts chemins
+
+MenuBar.50=Pre-Traitements
+MenuBar.pretreatmentsNodes=Noeuds
+MenuBar.pretreatmentsEdges=Arcs
+MenuBar.pretreatmentsTopology=Topologie
+MenuBar.51=Eviter les noeuds en doublons
+MenuBar.52=Autonommer les Arcs % Noeuds
+MenuBar.53=Autopondere les Arcs % Distance Euclidienne (Grille)
+MenuBar.weightOne=Autopondere les Arcs w=1
+MenuBar.54=Inverser les poids des arcs
+MenuBar.55=Supprimer les noeuds fantomes
+MenuBar.56=Triangulation et maillage
+MenuBar.57=Reseau de reference (Delaunay)
+MenuBar.58=Surfaces de Voronoi
+MenuBar.59=Calcul de tous les plus courts chemins
+MenuBar.mTopologyCorrecter=Corriger la topologie (snap)
+
+MenuBar.60=Recherche de chemins de memes longueurs
+MenuBar.61=Configuration
+MenuBar.62=Configuration de la legende...
+MenuBar.63=Fenetres
+MenuBar.64=Algorithmes
+MenuBar.65=Couches d'affichages
+MenuBar.66=Listes des noeuds
+MenuBar.67=Listes des aretes
+MenuBar.mWindowLayout=Themes
+MenuBar.mWindowBulles=Bulles
+MenuBar.mWindowEclipse=Eclipse
+
+MenuBar.71=Ouverture de fichiers XLS
+MenuBar.72=Ouverture d'un fichier DOT
+MenuBar.73=user.dir
+MenuBar.74=Fichier réseau dot  (*.dot)
+MenuBar.75=dot
+MenuBar.76=Ouverture d'un fichier Shape
+MenuBar.77=user.dir
+MenuBar.78=Fichier Shape  (*.shp)
+MenuBar.79=shp
+
+MenuBar.80=Affichage ?
+MenuBar.DebugTexteOuvertureShapePoints=Ouverture d'un fichier Shape / Couche Points
+MenuBar.DebugTexteOuvertureShapeODPoints=Ouverture d'un fichier Shape Points - Espace relationnel OD
+MenuBar.DebugUserDir=user.dir
+MenuBar.83=Export en DOT \!
+MenuBar.84=user.dir
+MenuBar.85=Enregistrer
+MenuBar.86=Enregistrer
+MenuBar.87=Erreur de fichier ou de repertoire pour l'export DOT
+MenuBar.88=Export en TLP \!
+MenuBar.89=Export en SVG \!
+
+MenuBar.90=user.dir
+MenuBar.91=Enregistrer
+MenuBar.92=Enregistrer
+MenuBar.93=Erreur de fichier ou de repertoire pour l'export DOT
+MenuBar.94=Export en Shape \!
+MenuBar.95=user.dir
+MenuBar.96=Enregistrer
+MenuBar.97=Enregistrer
+MenuBar.98=Erreur de fichier ou de repertoire pour l'export Shape
+MenuBar.99=Goodbye \!
+
+MenuBar.100=Tous les plus courts chemins
+MenuBar.101=Identification de chemins de memes longueurs sur le reseau
+MenuBar.102=Calcul de reseau de Delaunay
+MenuBar.103=Calcul des surfaces de Voronoi
+MenuBar.104=Calcul de la centralite
+MenuBar.105=Calcul de la centralite
+MenuBar.106=Calcul de la centralite
+MenuBar.107=Calcul de l'accessibilite de Shimbel
+MenuBar.108=Calcul de l'eloignement moyen
+MenuBar.109=Calcul de l'eloignement minimum
+
+MenuBar.110=Calcul de l'eloignement maximum
+MenuBar.111=Calcul de la circuite
+MenuBar.112=Calcul de l'empan
+MenuBar.113=Calcul du rayon distal
+MenuBar.114=Calcul du rayon proximal
+MenuBar.115=Calcul des kPCC Superpose
+MenuBar.116=Calcul d'un flux de PCC
+MenuBar.117=Calcul des k Closest First Tree
+MenuBar.118=Calcul des Triangles
+MenuBar.119=Test Graphe Eulerien
+
+MenuBar.120=Test Graphe Hamiltonien
+MenuBar.121=Il faut selectionner un seul noeud
+MenuBar.122=Eviter les noms de noeuds en doublons
+MenuBar.123=V
+MenuBar.124=Nom 
+MenuBar.125=\ - 
+MenuBar.126=Renomage de 
+MenuBar.127=\ noeuds
+MenuBar.128=\ - 
+MenuBar.129=break
+
+MenuBar.130=\ , poids :
+MenuBar.131=\ , poids distance :
+MenuBar.132=Suppression de 
+MenuBar.133=Nb composantes connexes : 
+MenuBar.134=Nombre de noeuds pour la composante n°
+MenuBar.135=\ : 
+MenuBar.136=Fenetre Algorithme
+MenuBar.137=Fenetre Couches
+MenuBar.138=Fenetre Noeuds
+MenuBar.139=Fenetre Aretes
+
+MenuBar.140=Dependances relationnelles
+MenuBar.141=Calcul des dependances relationnelles
+
+MenuBar.142=Filtres
+MenuBar.143=Au départ des noeuds sélectionnés 
+MenuBar.144=Noeuds sélectionnés comme origines
+MenuBar.145=Noeuds sélectionnés comme destinations
+MenuBar.146=Effacer filtres de l'espace relationnel
+
+MenuBar.147=Eloignement Moyen (espace OD)
+MenuBar.148=Calcul de l'eloignement moyen sur un espace relationnel restreint
+
+MenuBar.mConfigLang = Langue
+MenuBar.mConfigLangFrancais = Français
+MenuBar.mConfigLangAnglais = Anglais
+
+ConfigLegende.1=Intervalles Egaux
+ConfigLegende.2=Effectifs egaux
+
+ToolBar.2=NouvelleCouche
+
+GestionPanelDraw.NewView=Nouvelle Vue 
+GGL.user.dir=\
+
+GrapheEvent.0=Indicateurs
+GrapheEvent.1=Valeurs
+GrapheEvent.10=Nbre d'OD
+GrapheEvent.11=:(
+GrapheEvent.12=Non defini
+GrapheEvent.13=changement du poids d'un noeud
+GrapheEvent.2=Nbre de sommets
+GrapheEvent.3=Nbre d'aretes
+GrapheEvent.4=Nbre de composantes connexes
+GrapheEvent.5=Diametre
+GrapheEvent.6=Beta
+GrapheEvent.7=\#0.0000
+GrapheEvent.8=Densite d'aretes (%)
+GrapheEvent.9=Alpha
+
+PanelMainDraw.newView=Nouvelle vue 0
+PanelMainDraw.pNameGraphicExploration=Exploration graphique
+PanelMainDraw.txtSupConvexHull=_enveloppeConvexe
+PanelMainDraw.txtTestBuffer=Buffer
+PanelMainDraw.txtTestMeanDistance=Vue Eloignement Moyen
+PanelMainDraw.txtTestNormalView=Vue Normale
+PanelMainDraw.txtTestNormalView2=Vue Normale
+
+PanelTools.12=Vue Normale
+
+PanelLayer.1=N
+PanelLayer.10=New value of data:
+PanelLayer.11=\ \ \ \ row 
+PanelLayer.12=:
+PanelLayer.13=\ \ 
+PanelLayer.14=--------------------------
+PanelLayer.6=,
+PanelLayer.7=\ to 
+PanelLayer.8=\ (an instance of 
+PanelLayer.9=)
+PanelLayer.tColors=Couleurs
+PanelLayer.tInfo11=Setting value at 
+PanelLayer.tListEdges=Liste des arcs
+PanelLayer.tName=Nom
+PanelLayer.tVisible=Visible
+
+PanelLegend.18=Setting value at 
+PanelLegend.19=,
+PanelLegend.2=6
+PanelLegend.20=\ to 
+PanelLegend.21=\ (an instance of 
+PanelLegend.22=)
+PanelLegend.23=New value of data:
+PanelLegend.24=\ \ \ \ row 
+PanelLegend.25=:
+PanelLegend.26=\ \ 
+PanelLegend.27=--------------------------
+PanelLegend.4=6
+PanelLegend.bOk=Ok
+PanelLegend.cDiverge=Divergente
+PanelLegend.cEqualEffective=Effectifs egaux
+PanelLegend.cEqualInterval=Intervalles egaux
+PanelLegend.cPerso=Personnalisee
+PanelLegend.cSequence=Sequentielle
+PanelLegend.pName=Légende
+PanelLegend.testEqualEffectives=Intervalles egaux
+PanelLegend.tNumberClass=Nombre de caissons :
+PanelLegend.txtAreasSize=Buffers des zones
+PanelLegend.txtEdgesSize=Taille des arcs
+PanelLegend.txtInfoLegendProblem=problème légende
+PanelLegend.txtNodesSize=Taille des noeuds
+PanelLegend.txtTabColors=Couleurs
+PanelLegend.txtTabMaxValue=Valeur max
+PanelLegend.txtTabMinValue=Valeur min
+
+PanelTools.bAgregate=Agreger
+PanelTools.bAllSP=All PCC
+PanelTools.bAllSPDij=All PCC Dijkstra
+PanelTools.bAllSPFW=All PCC (Fl-Wa)
+PanelTools.bAllSPOD=All PCC OD
+PanelTools.bCheckAgregateAreas=Zones Agregees
+PanelTools.bCheckBackground=Image de Fond
+PanelTools.bCheckCenterLines=Lignes de centre
+PanelTools.bCheckColoreAreas=Colorier Surfaces
+PanelTools.bCheckComputeVoronoi=Calcul des surfaces de Voronoi
+PanelTools.bCheckConvexHull=Enveloppe Convexe
+PanelTools.bCheckDelaunay=Delaunay
+PanelTools.bCheckNetwork=Reseau
+PanelTools.bCheckSubNetwork=Sous-Reseaux
+PanelTools.bCheckUndirected=Non dirige
+PanelTools.bCheckVoronoi=Voronoi
+PanelTools.bChevelu=Chevelu
+PanelTools.bDesagregate=Desagreger
+PanelTools.bIndicatorView=Vue Indicateur
+PanelTools.bLogitPath=Chemin Logit
+PanelTools.bNormalView=Vue Normale
+PanelTools.bOk=Ok
+PanelTools.bShortestPath=PCC
+PanelTools.BSpanTree=Spanning Tree
+PanelTools.tGeometrie=Geometrie : 
+PanelTools.tGeomShape=Reelle (Shape)
+PanelTools.tGeomSimple=Simple
+PanelTools.txtInfo1=calcul effectué en 
+PanelTools.txtInfoSpanTree=Calcul de l'arbre couvrant
+PanelTools.txtInfoVArIndicatorView=Vue Indicateur
+PanelTools.txtInfoVarNormalView=Vue Normale
+PanelTools.txtTools=Outils
+
+PanelTopologicalIndicators.0=Indicateurs
+PanelTopologicalIndicators.1=Valeurs
+PanelTopologicalIndicators.2=Indicateurs Topologiques
+PopUpClicDroitPanelPrincipal.0=Plaquer un fond...
+PopUpClicDroitPanelPrincipal.1=Changer la couleur du noeud
+PopUpClicDroitPanelPrincipal.10=Definir le poids de l'arc
+PopUpClicDroitPanelPrincipal.11=Changer la couleur des objets
+PopUpClicDroitPanelPrincipal.12=Change la couleur de(s) l'objet(s) selectionne(s)
+PopUpClicDroitPanelPrincipal.13=Renomme l'objet selectionne
+PopUpClicDroitPanelPrincipal.14=Ok
+PopUpClicDroitPanelPrincipal.15=Annuler
+PopUpClicDroitPanelPrincipal.16=Redefini le poids de l'arc selectionne
+PopUpClicDroitPanelPrincipal.17=
+PopUpClicDroitPanelPrincipal.18=Ok
+PopUpClicDroitPanelPrincipal.19=Annuler
+PopUpClicDroitPanelPrincipal.2=Renommer Noeud
+PopUpClicDroitPanelPrincipal.20=user.dir
+PopUpClicDroitPanelPrincipal.3=Supprimer Noeud
+PopUpClicDroitPanelPrincipal.4=Visible
+PopUpClicDroitPanelPrincipal.5=Definir le poids du noeud
+PopUpClicDroitPanelPrincipal.6=Changer la couleur de l'arc
+PopUpClicDroitPanelPrincipal.7=Renommer Arc
+PopUpClicDroitPanelPrincipal.8=Supprimer Arc
+PopUpClicDroitPanelPrincipal.9=Visible
+
+CentraliteIntermediaire.0=Centralite_Intermediaire
+CentraliteIntermediaire.1=CentraliteIntermediaire
+CentraliteIntermediaire.2=Calcul de tous les PCC d'abord
+CentraliteIntermediaire.3=\ 
+CentraliteIntermediaire.4=Temps d'execution (ms):
+CentraliteIntermediaire.5=Vue Indicateur
+
+EloignementMoyen.0=Eloignement_Moyen
+EloignementMoyen.1=EloignementMoyen
+EloignementMoyenODSpace.0=Eloignement_Moyen_OD
+EloignementMoyenODSpace.1=EloignementMoyenOD
+EloignementMoyen.2=Calcul de tous les PCC d'abord
+EloignementMoyen.3=\ 
+EloignementMoyen.4=Temps d'execution (ms):
+EloignementMoyen.5=Vue Indicateur

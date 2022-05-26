@@ -1,0 +1,319 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.visu;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.jgrapht.graph.Subgraph;
+
+import fr.ign.cogit.geographlab.algo.maths.Barycentre;
+import fr.ign.cogit.geographlab.algo.maths.Bissectrice;
+import fr.ign.cogit.geographlab.algo.maths.EquationDroite;
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.Graphe;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.PanelMainDraw;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+
+import megamu.mesh.Hull;
+import megamu.mesh.MPolygon;
+
+public class ZoneAgregee extends ObjetGraphique {
+	
+	private static final long serialVersionUID = 1L;
+	
+	private PanelMainDraw panel;
+	
+	private HashSet<ObjetGraphique> objetsAgreges;
+	
+	private Polygon polygonShape;
+	
+	private Double valeurGraphique;
+	
+	private Subgraph<Noeud, Arc, Graphe> sousGrapheDeLaZone;
+	
+	double x1, y1, x2, y2;
+	double[][] coordBissectrices;
+	double[][] coordDroites;
+	
+	private int bufferZoneAgregee;
+	
+	public ZoneAgregee(PanelMainDraw panel, List<ObjetGraphique> objetsAAgreger) {
+		
+		this.panel = panel;
+		
+		String nom = "";
+		Double valeur = new Double(0.0);
+		int nbValeur = 0;
+		for (ObjetGraphique objetGraphique : objetsAAgreger) {
+			if (objetGraphique.getType() == ConstantesApplication.typeVertex) {
+				String str = objetGraphique.getNom() + "-";
+				nom = nom + str;
+			}
+		}
+		
+		Set<Noeud> vertexSet = new HashSet<Noeud>();
+		Set<NoeudGraphique> graphicVertexSet = new HashSet<NoeudGraphique>();
+		Set<Arc> edgeSet = new HashSet<Arc>();
+		Set<ArcGraphique> graphicEdgeSet = new HashSet<ArcGraphique>();
+		
+		// On met les noeuds a agreger dans la collection vertexSet
+		for (ObjetGraphique objetGraphique : objetsAAgreger) {
+			if (objetGraphique.getType() == ConstantesApplication.typeVertex) {
+				vertexSet.add(((NoeudGraphique) objetGraphique).getNoeudTopologique());
+				graphicVertexSet.add((NoeudGraphique) objetGraphique);
+				// valeur +=
+				// ((NoeudGraphique)objetGraphique).getNoeudTopologique().getValeurPourIndicateur(panel.carte.getNomIndicateurCourant());
+				// nbValeur++;
+			}
+		}
+		
+		// On met les arcs issus des noeuds a agreger dans la collection edgeSet
+		for (Noeud iterNoeud1 : vertexSet) {
+			for (Noeud iterNoeud2 : vertexSet) {
+				Set<Arc> tempArcs = panel.carte.getGraphe().getAllEdges(iterNoeud1, iterNoeud2);
+				if (tempArcs.size() != 0) {
+					edgeSet.addAll(tempArcs);
+					for (Arc iterArcAAjouter : tempArcs)
+						graphicEdgeSet.add(iterArcAAjouter.getArcGraphique());
+					// valeur +=
+					// iterArcAAjouter.getArcGraphique().getNoeudTopologique().getValeurPourIndicateur(nomIndicateur);
+					// nbValeur++;
+				}
+			}
+		}
+		
+		objetsAAgreger.clear();
+		objetsAAgreger.addAll(graphicVertexSet);
+		objetsAAgreger.addAll(graphicEdgeSet);
+		
+		this.sousGrapheDeLaZone = new Subgraph<Noeud, Arc, Graphe>(panel.carte.getGraphe(), vertexSet, edgeSet);
+		
+		setType(ConstantesApplication.typeMetaVertex);
+		
+		setNom(nom);
+		
+		setColor(ConstantesApplication.unselectedColorMetarVertex);
+		
+		System.out.println(getNom());
+		
+		this.objetsAgreges = new HashSet<ObjetGraphique>();
+		this.setObjetsAgreges(objetsAAgreger);
+		
+		setValeursGraphiquesMoyenne();
+		
+	}
+	
+	public void addObjet(ObjetGraphique objetGraphique) {
+		this.objetsAgreges.add(objetGraphique);
+	}
+	
+	public void removeObjet(ObjetGraphique objetGraphique) {
+		this.objetsAgreges.remove(objetGraphique);
+	}
+	
+	public void setObjetsAgreges(List<ObjetGraphique> objetsAAgreger) {
+		this.objetsAgreges.addAll(objetsAAgreger);
+	}
+	
+	public HashSet<ObjetGraphique> getObjetsAgreges() {
+		return this.objetsAgreges;
+	}
+	
+	public HashSet<NoeudGraphique> getNoeuds() {
+		
+		HashSet<NoeudGraphique> noeudsGraphiques = new HashSet<NoeudGraphique>();
+		
+		for (ObjetGraphique iterObjGra : this.objetsAgreges) {
+			if (iterObjGra.getType() == ConstantesApplication.typeVertex)
+				noeudsGraphiques.add((NoeudGraphique) iterObjGra);
+		}
+		
+		return noeudsGraphiques;
+	}
+	
+	public HashSet<ArcGraphique> getArcs() {
+		
+		HashSet<ArcGraphique> noeudsGraphiques = new HashSet<ArcGraphique>();
+		
+		for (ObjetGraphique iterObjGra : this.objetsAgreges) {
+			if (iterObjGra.getType() == ConstantesApplication.typeEdge)
+				noeudsGraphiques.add((ArcGraphique) iterObjGra);
+		}
+		
+		return noeudsGraphiques;
+	}
+	
+	public Double setValeursGraphiquesMoyenne() {
+		Double temp = new Double(0.0);
+		
+		for (ObjetGraphique iterObjetZoneAgregee : this.objetsAgreges) {
+			if (iterObjetZoneAgregee.getType() == ConstantesApplication.typeVertex) {
+				temp += ((NoeudGraphique) iterObjetZoneAgregee).getNoeudTopologique().getValeurPourIndicateur(this.panel.carte.getNomIndicateurCourant());
+			}
+			if (iterObjetZoneAgregee.getType() == ConstantesApplication.typeEdge) {
+				temp += ((ArcGraphique) iterObjetZoneAgregee).getArcTopologique().getValeurPourIndicateur(this.panel.carte.getNomIndicateurCourant());
+			}
+		}
+		
+		this.valeurGraphique = new Double(temp.doubleValue() / this.objetsAgreges.size());
+		
+		return this.valeurGraphique;
+	}
+	
+	public void setValeursGraphiquesMedianne() {
+		
+	}
+	
+	public void setValeursGraphiquesMinimum() {
+		
+	}
+	
+	public void setValeursGraphiquesMaximum() {
+		
+	}
+	
+	public Double getValeurGraphique() {
+		return this.valeurGraphique;
+	}
+	
+	public Polygon getShape() {
+		
+		HashSet<NoeudGraphique> mesNoeuds = getNoeuds();
+		
+		float[][] lesNoeudsEnTableau = new float[mesNoeuds.size()][2];
+		float[][] lesNoeudsAvecBuffer = new float[mesNoeuds.size()][2];
+		
+		this.coordBissectrices = new double[mesNoeuds.size()][4];
+		this.coordDroites = new double[mesNoeuds.size()][4];
+		
+		// Buffer autour de la zone
+		// 1. Calcul du barycentre
+		Barycentre barycentreZone = new Barycentre(mesNoeuds);
+		
+		// 2. Construction du Buffer
+		int i = 0;
+		for (NoeudGraphique iterNoeud : mesNoeuds) {
+			
+			// Pour le X
+			lesNoeudsEnTableau[i][0] = iterNoeud.getXPosition();
+			// Pour le Y
+			lesNoeudsEnTableau[i][1] = iterNoeud.getYPosition();
+			i++;
+		}
+		//			
+		// EquationDroite droiteEntreBaryCentreEtpoint = new EquationDroite( new
+		// Point(barycentreZone.getBarycentre().x,
+		// barycentreZone.getBarycentre().y),
+		// new Point(iterNoeud.getXPosition(), iterNoeud.getYPosition()));
+		//			
+		
+		Hull enveloppeConvexe = new Hull(lesNoeudsEnTableau);
+		
+		MPolygon regionAgregegee = enveloppeConvexe.getRegion();
+		
+		float[][] pointsDuPolygone = regionAgregegee.getCoords();
+		int nbPoints = pointsDuPolygone.length;
+		
+		for (int j = 0; j < pointsDuPolygone.length; j++) {
+			
+			// Trois points pour obtenir deux droites
+			int indicePointCentral = j, indicePointGauche = j - 1, indicePointDroite = j + 1;
+			
+			if (indicePointGauche < 0)
+				indicePointGauche = pointsDuPolygone.length - 1;
+			if (indicePointDroite > pointsDuPolygone.length - 1)
+				indicePointDroite = 0;
+			
+			Point pointGauche = new Point(new Double(pointsDuPolygone[indicePointGauche][0]).intValue(), new Double(pointsDuPolygone[indicePointGauche][1]).intValue());
+			Point pointCentral = new Point(new Double(pointsDuPolygone[indicePointCentral][0]).intValue(), new Double(pointsDuPolygone[indicePointCentral][1]).intValue());
+			Point pointDroite = new Point(new Double(pointsDuPolygone[indicePointDroite][0]).intValue(), new Double(pointsDuPolygone[indicePointDroite][1]).intValue());
+			
+			EquationDroite d1 = new EquationDroite(pointGauche, pointCentral);
+			EquationDroite d2 = new EquationDroite(pointCentral, pointDroite);
+			
+			this.coordDroites[j][0] = pointsDuPolygone[indicePointCentral][0];
+			this.coordDroites[j][1] = pointsDuPolygone[indicePointCentral][1];
+			this.coordDroites[j][2] = pointsDuPolygone[indicePointDroite][0];
+			this.coordDroites[j][3] = pointsDuPolygone[indicePointDroite][1];
+			
+			Bissectrice bissectrice = new Bissectrice(d1, d2);
+			
+			// System.out.println("Bissectrice a = " + bissectrice.getA());
+			// System.out.println("Bissectrice b = " + bissectrice.getB());
+			// System.out.println("Bissectrice angle = " +
+			// bissectrice.getRho());
+			
+			this.x1 = 0;
+			this.y1 = bissectrice.getA() * this.x1 + bissectrice.getB();
+			this.x2 = 1000;
+			this.y2 = bissectrice.getA() * this.x2 + bissectrice.getB();
+			
+			this.coordBissectrices[j][0] = this.x1;
+			this.coordBissectrices[j][1] = this.y1;
+			this.coordBissectrices[j][2] = this.x2;
+			this.coordBissectrices[j][3] = this.y2;
+			
+			if (pointsDuPolygone[j][0] < barycentreZone.getBarycentre().getX())
+				lesNoeudsAvecBuffer[j][0] = pointsDuPolygone[j][0] - this.bufferZoneAgregee * bissectrice.getCosRho();
+			else
+				lesNoeudsAvecBuffer[j][0] = pointsDuPolygone[j][0] + this.bufferZoneAgregee * bissectrice.getCosRho();
+			
+			if (pointsDuPolygone[j][1] < barycentreZone.getBarycentre().getY())
+				lesNoeudsAvecBuffer[j][1] = pointsDuPolygone[j][1] - this.bufferZoneAgregee * bissectrice.getSinRho();
+			else
+				lesNoeudsAvecBuffer[j][1] = pointsDuPolygone[j][1] + this.bufferZoneAgregee * bissectrice.getSinRho();
+			
+		}
+		
+		// Les noeuds points du polygone sont maintenant avec le buffer
+		
+		int[] coordXPolygone = new int[nbPoints];
+		int[] coordYPolygone = new int[nbPoints];
+		
+		for (int j = 0; j < pointsDuPolygone.length; j++) {
+			coordXPolygone[j] = (int) lesNoeudsAvecBuffer[j][0];
+			coordYPolygone[j] = (int) lesNoeudsAvecBuffer[j][1];
+		}
+		
+		this.polygonShape = new Polygon(coordXPolygone, coordYPolygone, nbPoints);
+		
+		return this.polygonShape;
+	}
+	
+	public void paintComponent(Graphics g, int tailleBuffer) {
+		
+		this.bufferZoneAgregee = tailleBuffer;
+		
+		((Graphics2D) g).fill(getShape());
+		
+		if (!this.panel.carte.variablesDeCarte.afficheSousReseau) {
+			((Graphics2D) g).setColor(Color.BLACK);
+			((Graphics2D) g).draw(getShape());
+		}
+		
+		// for (int i = 0; i < this.coordBissectrices.length; i++) {
+		// ((Graphics2D) g).setColor(Color.BLACK);
+		// ((Graphics2D) g).draw(new
+		// Line2D.Double(this.coordBissectrices[i][0],this.coordBissectrices[i][1],
+		// this.coordBissectrices[i][2],this.coordBissectrices[i][3]));
+		// ((Graphics2D) g).draw(new
+		// Line2D.Double(this.coordDroites[i][0],this.coordDroites[i][1],
+		// this.coordDroites[i][2],this.coordDroites[i][3]));
+		// }
+		
+	}
+	
+}

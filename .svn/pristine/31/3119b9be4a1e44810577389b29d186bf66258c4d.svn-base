@@ -1,0 +1,16 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * RayonsDistalProximal.java in fr.ign.cogit.geographlab.algo.indicateurs
+ * 
+ */
+package fr.ign.cogit.geographlab.algo.indicateurs;
+
+/**
+ * @author eric
+ *
+ */
+public class RayonsProximalDistal {
+	
+}

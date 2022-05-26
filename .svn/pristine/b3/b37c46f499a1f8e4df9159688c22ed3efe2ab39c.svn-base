@@ -1,0 +1,9 @@
+graph G {
+  1 [label = "Vertex_236"];
+  2 [label = "Vertex_410"];
+  3 [label = "Vertex_766"];
+  4 [label = "Vertex_983"];
+  4 -- 2 [label = "(Vertex_983 : Vertex_410)"];
+  2 -- 1 [label = "(Vertex_410 : Vertex_236)"];
+  1 -- 3 [label = "(Vertex_236 : Vertex_766)"];
+}

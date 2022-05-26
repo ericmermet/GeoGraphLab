@@ -1,0 +1,10 @@
+graph G {
+  1 [label = "A"];
+  2 [label = "B"];
+  3 [label = "C"];
+  4 [label = "D"];
+  4 -- 3 [label = "(D : C)"];
+  3 -- 2 [label = "(C : B)"];
+  2 -- 1 [label = "(B : A)"];
+  1 -- 4 [label = "(A : D)"];
+}

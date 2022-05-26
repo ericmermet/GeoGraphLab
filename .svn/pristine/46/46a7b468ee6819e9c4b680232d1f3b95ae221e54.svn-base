@@ -1,0 +1,23 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * ConstantesImagesIrstea.java in fr.irstea.adret.geographlab.plugins.ihm.constantes
+ * 
+ */
+package fr.irstea.adret.geographlab.plugins.ihm.constantes;
+
+/**
+ * @author eric
+ *
+ */
+public class ConstantesImagesIrstea {
+	
+	public final static String imgAddition3Icone = new String("/fr/irstea/adret/geographlab/plugins/images/icones/langageGraphique/mesure/addition3Bloc.png");
+	public final static String imgMultiplication3Icone = new String("/fr/irstea/adret/geographlab/plugins/images/icones/langageGraphique/mesure/multiplication3Bloc.png");
+	public final static String imgFonctionUnaireIcone = new String("/fr/irstea/adret/geographlab/plugins/images/icones/langageGraphique/mesure/f_a.png");
+	public final static String imgFonctionBinaireIcone = new String("/fr/irstea/adret/geographlab/plugins/images/icones/langageGraphique/mesure/f_ab.png");
+	
+	public final static String imgSommePonderee = new String("/fr/irstea/adret/geographlab/plugins/images/operationBlocs/mesure/sommePonderee.png");
+	
+}

@@ -1,0 +1,237 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.graphe;
+
+import fr.ign.cogit.geographlab.visu.ArcGraphique;
+
+import com.vividsolutions.jts.geom.Point;
+
+import java.util.Hashtable;
+
+import org.jgrapht.graph.DefaultWeightedEdge;
+
+public class Arc extends DefaultWeightedEdge {
+	private static final long serialVersionUID = 1L;
+	
+	private String nom = new String();
+	
+	private Noeud noeudSource;
+	private Noeud noeudCible;
+	
+	private Noeud noeudDepartPourCheminLogit;
+	private Noeud noeudArriveePourCheminLogit;
+	private double poidsLogit;
+	
+	private double distance = 0;
+	private double temps = 0;
+	private boolean isSelected = false;
+	
+	private ArcGraphique arcGraphique;
+	
+	public Hashtable<String, Double> indicateursValeurs = new Hashtable<String, Double>();
+	
+	//	private final EventListenerList listenersSelectionArcs = new EventListenerList();
+	//	private final EventListenerList listenersNomArcs = new EventListenerList();
+	
+	public Arc(Noeud n1, Noeud n2) {
+		super();
+		setNom(n1.getNom() + "-" + n2.getNom());
+		this.setNoeudSource(n1);
+		this.setNoeudCible(n2);
+		this.arcGraphique = new ArcGraphique(this);
+		setIndicateurValeur("none", 0.0);
+	}
+	
+	public Arc(Noeud n1, Noeud n2, String nomIndicateur) {
+		this(n1, n2);
+		setIndicateurValeur(nomIndicateur, 0.0);
+	}
+	
+	public void setNoeudSource(Noeud noeudSource) {
+		this.noeudSource = noeudSource;
+	}
+	
+	public void changeNoeudSource(Noeud nouveauNoeudSource) {
+		this.setNoeudSource(nouveauNoeudSource);
+		this.setNom(this.noeudSource.getNom() + "-" + this.noeudCible.getNom());
+		this.arcGraphique.changePSource(nouveauNoeudSource.getPosition());
+		this.arcGraphique.autoSetShape();
+	}
+	
+	public Noeud getSource() {
+		return this.noeudSource;
+	}
+	
+	public void setNoeudCible(Noeud noeudCible) {
+		this.noeudCible = noeudCible;
+	}
+	
+	public void changeNoeudCible(Noeud nouveauNoeudCible) {
+		this.setNoeudCible(nouveauNoeudCible);
+		this.setNom(this.noeudSource.getNom() + "-" + this.noeudCible.getNom());
+		this.arcGraphique.changePCible(nouveauNoeudCible.getPosition());
+		this.arcGraphique.autoSetShape();
+	}
+	
+	public Noeud getTarget() {
+		return this.noeudCible;
+	}
+	
+	public void setNoeudDepartPourCheminLogit(Noeud noeudDepartPourCheminLogit) {
+		this.noeudDepartPourCheminLogit = noeudDepartPourCheminLogit;
+	}
+	
+	public Noeud getNoeudDepartPourCheminLogit() {
+		return this.noeudDepartPourCheminLogit;
+	}
+	
+	public void setNoeudArriveePourCheminLogit(Noeud noeudArriveePourCheminLogit) {
+		this.noeudArriveePourCheminLogit = noeudArriveePourCheminLogit;
+	}
+	
+	public Noeud getNoeudArriveePourCheminLogit() {
+		return this.noeudArriveePourCheminLogit;
+	}
+	
+	public void setPoidsLogit(double poidsLogit) {
+		this.poidsLogit = poidsLogit;
+	}
+	
+	public double getPoidsLogit() {
+		return this.poidsLogit;
+	}
+	
+	public void setPoidsDistance(double d) {
+		this.distance = d;
+	}
+	
+	public double getPoidsDistance() {
+		return this.distance;
+	}
+	
+	public void setPoidsTemps(double t) {
+		this.temps = t;
+	}
+	
+	public double getPoidsTemps() {
+		return this.temps;
+	}
+	
+	public double getPoids() {
+		return getWeight();
+	}
+	
+	public void setNom(String nom) {
+		this.nom = new String(nom);
+		//		fireNomChange();
+	}
+	
+	public String getNom() {
+		return this.nom;
+	}
+	
+	public void setIndicateurValeur(String nom, double valeur) {
+		this.indicateursValeurs.put(nom, new Double(valeur));
+	}
+	
+	public Double getValeurPourIndicateur(String nomIndicateur) {
+		return this.indicateursValeurs.get(nomIndicateur);
+	}
+	
+	public Hashtable<String, Double> getIndicateursClone() {
+		return (Hashtable<String, Double>) this.indicateursValeurs.clone();
+	}
+	
+	public void setIndicateurs(Hashtable<String, Double> i){
+		this.indicateursValeurs = i;
+	}
+	
+	public Point getPointSource() {
+		return this.noeudSource.getNoeudGraphique().getPosition();
+	}
+	
+	public Point getPointCible() {
+		return this.noeudCible.getNoeudGraphique().getPosition();
+	}
+	
+	public void setSelected(boolean selected) {
+		this.arcGraphique.setSelected(selected);
+		this.isSelected = selected;
+		//		fireSelectionChange();
+	}
+	
+	public ArcGraphique getArcGraphique() {
+		return this.arcGraphique;
+	}
+	
+	public void setArcGraphique(ArcGraphique aG) {
+		this.arcGraphique = aG;
+	}
+	
+	
+	// public void setValeurVue(Double valeurVue) {
+	// this.getArcGraphique().setValeurGraphique(valeurVue);
+	// }
+	//		
+	// public Double getValeurVue() {
+	// return this.getArcGraphique().getValeurGraphique();
+	// }
+	
+	public boolean isSelected() {
+		return this.isSelected;
+	}
+	
+	//	public void addNomArcListener(ArcListener listener) {
+	//		this.listenersNomArcs.add(ArcListener.class, listener);
+	//	}
+	//	
+	//	public void removeNomArcListener(ArcListener listener) {
+	//		this.listenersNomArcs.remove(ArcListener.class, listener);
+	//	}
+	//	
+	//	public void addSelectionArcListener(ArcListener listener) {
+	//		this.listenersSelectionArcs.add(ArcListener.class, listener);
+	//	}
+	//	
+	//	public void removeSelectionArcListener(ArcListener listener) {
+	//		this.listenersSelectionArcs.remove(ArcListener.class, listener);
+	//	}
+	//	
+	//	public ArcListener[] getNomArcListeners() {
+	//		return this.listenersNomArcs.getListeners(ArcListener.class);
+	//	}
+	//	
+	//	public ArcListener[] getSelectionArcListeners() {
+	//		return this.listenersSelectionArcs.getListeners(ArcListener.class);
+	//	}
+	//	
+	//	protected void fireNomChange() {
+	//		for (ArcListener listener : getSelectionArcListeners()) {
+	//			listener.nomChange();
+	//		}
+	//	}
+	//	
+	//	protected void fireSelectionChange() {
+	//		for (ArcListener listener : getSelectionArcListeners()) {
+	//			listener.selectionChange();
+	//		}
+	//	}
+	
+	@Override
+	public Arc clone() {
+		
+		Arc nouvelArc = new Arc(this.getSource(), this.getTarget());
+		
+		nouvelArc.setPoidsDistance(this.getPoidsDistance());
+		nouvelArc.setPoidsTemps(this.getPoidsTemps());
+		nouvelArc.setSelected(false);
+		// nouvelArc.setValeurVue(new Double(0.0));
+		
+		return nouvelArc;
+	}
+}

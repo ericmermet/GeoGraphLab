@@ -1,0 +1,167 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm.exploration;
+
+import fr.ign.cogit.geographlab.algo.maths.Moyenne;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesExploration;
+import fr.irstea.adret.geographlab.plugins.mmi.constants.ConstantesExplorationIrstea;
+import fr.irstea.adret.geographlab.plugins.mmi.exploration.BlocOperationMesure_Irstea;
+
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.awt.geom.Line2D;
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+
+public class ConnecteurBlocs {
+	
+	private LinkedList<Line2D> mesLignes;
+	private Color couleur;
+	private int typeConnecteur;
+	
+	private BlocGraphique blocGraphique1, blocGraphique2;
+	
+	private ArrayList<Rectangle> listRectConnect;
+
+	public ConnecteurBlocs(BlocGraphique bloc1, BlocGraphique bloc2) {
+		this.mesLignes = new LinkedList<Line2D>();
+		this.blocGraphique1 = bloc1;
+		this.blocGraphique2 = bloc2;
+	}
+	
+	public ConnecteurBlocs(ArrayList<Rectangle> rectanglesConnect, int typeConnecteur) {
+		this.mesLignes = new LinkedList<Line2D>();
+		this.listRectConnect = rectanglesConnect;
+		this.typeConnecteur = typeConnecteur;
+		setLines();
+	}
+	
+	public void addLine(Line2D l) {
+		this.mesLignes.add(l);
+	}
+	
+	public void removeLine(Line2D l) {
+		this.mesLignes.remove(l);
+	}
+	
+	public LinkedList<Line2D> getLines() {
+		return this.mesLignes;
+	}
+	
+	public void setCouleur(Color couleur) {
+		this.couleur = couleur;
+	}
+	
+	public Color getCouleur() {
+		return this.couleur;
+	}
+
+	public void setBlocGraphique1(BlocGraphique blocGraphique1) {
+		this.blocGraphique1 = blocGraphique1;
+	}
+
+	public BlocGraphique getBlocGraphique1() {
+		return this.blocGraphique1;
+	}
+	
+	public void setBlocGraphique2(BlocGraphique blocGraphique2) {
+		this.blocGraphique2 = blocGraphique2;
+	}
+
+	public BlocGraphique getBlocGraphique2() {
+		return this.blocGraphique2;
+	}
+
+	public void setTypeConnecteur(int typeConnecteur) {
+		this.typeConnecteur = typeConnecteur;
+	}
+
+	public int getTypeConnecteur() {
+		return this.typeConnecteur;
+	}
+		
+	public ArrayList<Rectangle> getTabRectConnect() {
+		return this.listRectConnect;
+	}
+
+	public void setTabRectConnect(ArrayList<Rectangle> listRectConnect) {
+		this.listRectConnect = listRectConnect;
+		setLines();
+	}
+	
+	public void setLinesMeasureBlockToBlock() {
+		
+		this.mesLignes.clear();
+		this.listRectConnect = new ArrayList<Rectangle>();
+		
+		Rectangle rectDepart = null;
+		Rectangle rectArrivee = null;
+		
+		//Cas 1
+		//Bloc 1 = output measure
+		if (this.blocGraphique1.typeBloc == ConstantesExploration.blocCarte) {
+			rectDepart = ((BlocCarte)this.blocGraphique1).rectMesureSortie;
+			this.listRectConnect.add(rectDepart);
+		}
+		//Bloc 2 = input -> operation
+		if( this.blocGraphique2.typeBloc == ConstantesExploration.blocOperation ) {
+			rectArrivee = ((BlocOperationMesure_Irstea)this.blocGraphique2).rectEntreeGauche;
+			this.listRectConnect.add(rectArrivee);
+		}
+		
+		//Cas 1
+		//Bloc 1 = output measure
+		if (this.blocGraphique1.typeBloc == ConstantesExploration.blocOperation) {
+			rectDepart = ((BlocOperationMesure_Irstea)this.blocGraphique1).rectSortie;
+			this.listRectConnect.add(rectDepart);
+		}
+		//Bloc 2 = input -> operation
+		if( this.blocGraphique2.typeBloc == ConstantesExploration.blocCarte ) {
+			rectArrivee = ((BlocCarte)this.blocGraphique2).rectMesureEntree;
+			this.listRectConnect.add(rectArrivee);
+		}
+		
+		int moyX = Moyenne.arithmetique( 	(this.listRectConnect.get(0).getX()),
+				(this.listRectConnect.get(1).getX()) ).intValue();
+		
+		this.addLine(new Line2D.Double(this.listRectConnect.get(0).getX(), this.listRectConnect.get(0).getY(), moyX, this.listRectConnect.get(0).getY()));
+		this.addLine(new Line2D.Double(moyX, this.listRectConnect.get(0).getY(), moyX, this.listRectConnect.get(1).getY()));
+		this.addLine(new Line2D.Double(moyX, this.listRectConnect.get(1).getY(), this.listRectConnect.get(1).getX(), this.listRectConnect.get(1).getY()));
+		
+	}
+	
+	public void setLines() {
+		
+		this.mesLignes.clear();
+		
+		int moyX = Moyenne.arithmetique( 	(this.listRectConnect.get(0).getX()),
+											(this.listRectConnect.get(1).getX()) ).intValue();
+		
+		switch (typeConnecteur) {
+			case ConstantesExploration.typeEspace:
+				moyX -= 15;
+				break;
+			case ConstantesExploration.typeMesure:
+				moyX -= 5;
+				break;
+			case ConstantesExploration.typeVue:
+				moyX += 5;
+				break;
+			case ConstantesExploration.typeLegende:
+				moyX += 15;
+				break;
+		}
+		
+		this.addLine(new Line2D.Double(this.listRectConnect.get(0).getX(), this.listRectConnect.get(0).getY(), moyX, this.listRectConnect.get(0).getY()));
+		this.addLine(new Line2D.Double(moyX, this.listRectConnect.get(0).getY(), moyX, this.listRectConnect.get(1).getY()));
+		this.addLine(new Line2D.Double(moyX, this.listRectConnect.get(1).getY(), this.listRectConnect.get(1).getX(), this.listRectConnect.get(1).getY()));
+		
+	}
+	
+}

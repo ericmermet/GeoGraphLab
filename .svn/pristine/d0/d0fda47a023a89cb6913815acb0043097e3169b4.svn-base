@@ -1,0 +1,31 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN 2007 - 2013
+ * 
+ * Messages.java in fr.ign.cogit.geographlab.ihm.bars
+ * 
+ */
+package fr.ign.cogit.geographlab.lang;
+
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
+/**
+ * @author eric
+ *
+ */
+public class Messages_fr_FR {
+	private static final String BUNDLE_NAME = "fr.ign.cogit.geographlab.lang.messages_fr_FR"; //$NON-NLS-1$
+	
+	private static final ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
+	
+	private Messages_fr_FR() {
+	}
+	
+	public static String getString(String key) {
+		try {
+			return RESOURCE_BUNDLE.getString(key);
+		} catch (MissingResourceException e) {
+			return '!' + key + '!';
+		}
+	}
+}

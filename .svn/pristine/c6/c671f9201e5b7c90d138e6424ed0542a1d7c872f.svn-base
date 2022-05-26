@@ -1,0 +1,173 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.visu;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
+
+
+
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.graphe.event.NoeudEvent;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+import fr.ign.cogit.geographlab.visu.CelluleDeVoronoi;
+
+public class NoeudGraphique extends ObjetGraphique {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	private Noeud noeudTopologique;
+	
+	private int rayon;
+	private Ellipse2D.Double vertexShape;
+	
+	private Point positionNoeudGraphique;
+	
+	private CelluleDeVoronoi celluleDeVoronoi;
+	
+	private boolean isSelectedOrigine =false , isSelectedDestination= false;
+	
+	private NoeudEvent event(Noeud n, NoeudGraphique ng) {
+		NoeudEvent evt = new NoeudEvent(n, ng);
+		
+		// System.out.println("pouet");
+		if (evt.selectionChange()) {
+			// System.out.println("youpi");
+		}
+		return evt;
+	}
+	
+	public NoeudGraphique(Noeud n) {
+		super(n.getNom(), ConstantesApplication.typeVertex);
+		this.setNoeudTopologique(n);
+		n.addSelectionNoeudListener(this.event(n, this));
+		n.addNomNoeudListener(this.event(n, this));
+		n.addPositionNoeudListener(this.event(n, this));
+		setPosition(n.getPosition());
+		setRayon(ConstantesApplication.vertexRadius);
+		setColor(ConstantesApplication.unselectedColorVertex);
+		autoSetShape();
+		this.celluleDeVoronoi = new CelluleDeVoronoi(n.getNom());
+	}
+	
+	public void setNoeudTopologique(Noeud noeudTopologique) {
+		this.noeudTopologique = noeudTopologique;
+	}
+	
+	public Noeud getNoeudTopologique() {
+		return this.noeudTopologique;
+	}
+	
+	public Point getPosition() {
+		return this.positionNoeudGraphique;
+	}
+	
+	public int getXPosition() {
+		return this.positionNoeudGraphique.x;
+	}
+	
+	public int getYPosition() {
+		return this.positionNoeudGraphique.y;
+	}
+	
+	public void setPosition(Point position) {
+		this.positionNoeudGraphique = position;
+		autoSetShape();
+	}
+	
+	public void setXPosition(int x) {
+		this.positionNoeudGraphique.x = x;
+		autoSetShape();
+	}
+	
+	public void setYPosition(int y) {
+		this.positionNoeudGraphique.y = y;
+		autoSetShape();
+	}
+	
+	public int getRayon() {
+		return this.rayon;
+	}
+	
+	public void setRayon(int r) {
+		this.rayon = r;
+	}
+	
+	public void autoSetShape() {
+		this.vertexShape = new Ellipse2D.Double(getXPosition() - getRayon(), getYPosition() - getRayon(), 3 * getRayon(), 3 * getRayon());
+	}
+	
+	public void changeRayon(int nouveauRayon) {
+		setRayon(nouveauRayon);
+		this.vertexShape.x = getXPosition() - getRayon();
+		this.vertexShape.y = getYPosition() - getRayon();
+		this.vertexShape.height = 3 * getRayon();
+		this.vertexShape.width = 3 * getRayon();
+	}
+	
+	public Shape getShape() {
+		return this.vertexShape;
+	}
+	
+	@Override
+	public void paintComponent(Graphics g) {
+		
+		((Graphics2D) g).fill(this.vertexShape);
+		((Graphics2D) g).setColor(Color.BLACK);
+		((Graphics2D) g).draw(getShape());
+		
+	}
+	
+	public void paintComponent(Graphics g, int vertexRadius) {
+		
+		this.changeRayon(vertexRadius);
+		paintComponent(g);
+		
+	}
+	
+	public void setCelluleDeVoronoi(CelluleDeVoronoi cell) {
+		this.celluleDeVoronoi = cell;
+	}
+	
+	public CelluleDeVoronoi getCelluleDeVoronoi() {
+		return this.celluleDeVoronoi;
+	}
+
+	@Override
+	public void setSelected(boolean isSelected){
+		super.setSelected(isSelected);
+		if(isSelected == false ){
+			setSelectedOrigine(false);
+			setSelectedDestination(false);
+		}
+	}
+	
+	public void setSelectedOrigine(boolean isSelectedOrigine) {
+		this.isSelectedOrigine = isSelectedOrigine;
+	}
+
+	public boolean isSelectedOrigine() {
+		return this.isSelectedOrigine;
+	}
+
+	public void setSelectedDestination(boolean isSelectedDestination) {
+		this.isSelectedDestination = isSelectedDestination;
+	}
+
+	public boolean isSelectedDestination() {
+		return this.isSelectedDestination;
+	}
+	
+}

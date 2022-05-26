@@ -1,0 +1,65 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.visu;
+
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+
+//import java.awt.Polygon;
+import java.awt.geom.Area;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LinearRing;
+import com.vividsolutions.jts.geom.Polygon;
+
+public class CelluleDeVoronoi extends ObjetGraphique {
+	
+	private static final long serialVersionUID = 1L;
+	
+	public Polygon polygone;
+	public Area area;
+	public NoeudGraphique noeudAssocie;
+	
+	public CelluleDeVoronoi(Noeud n) {
+		super("Cell_" + n.getNom(), ConstantesApplication.typeVoronoiCell );
+		n.getNoeudGraphique().setCelluleDeVoronoi(this);
+	}
+	
+	public CelluleDeVoronoi(String nom) {
+		super(nom, ConstantesApplication.typeVoronoiCell);
+	}
+	
+	public CelluleDeVoronoi(String nom, Polygon p, Area a) {
+		this(nom);
+		this.polygone = p;
+		this.area = a;
+	}
+	
+	public CelluleDeVoronoi(String nom, Coordinate[] coords) {
+		this(nom);
+		GeometryFactory geomFac = new GeometryFactory();
+		LinearRing lr = geomFac.createLinearRing(coords);
+		this.polygone = geomFac.createPolygon(lr,null);
+		
+	}
+	
+	public NoeudGraphique getNoeudAssocie() {
+		return this.noeudAssocie;
+	}
+
+	public void setNoeudAssocie(NoeudGraphique noeudAssocie) {
+		this.noeudAssocie = noeudAssocie;
+	}
+
+	public double getSurfacePolygone() {
+		
+		return this.polygone.getArea();
+	}
+	
+}

@@ -1,0 +1,72 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.cheminements;
+
+import java.util.Calendar;
+
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.exploration.Espace;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+
+
+public class APSPDijkstra extends Thread {
+	
+	public Carte carte;
+	
+	public Espace espace;
+	
+	public Thread thread;
+	
+	public APSPDijkstra(Carte carte) {
+		
+		this.carte = carte;
+		this.espace = carte.getEspace();
+		this.thread = new Thread(this);
+
+	}
+	
+	@Override
+	public void run() {
+		
+		int nbOdsCalculeesTotales = 0, nbOdsCalculeesParArbreCouvrant = 0;
+		
+		System.out.println("Debut APSP by Dijkstra");
+		
+		this.espace.clearEspaceDeDef();
+		this.carte.getTousLesPCC().clear();
+		
+		Calendar c1 = Calendar.getInstance();
+		long debut = c1.getTimeInMillis();
+		
+		int nbNoeud = this.carte.getGraphe().getNoeuds().size();
+		
+		int nbOperation = nbNoeud * (nbNoeud - 1) / 2;
+		
+		for (Noeud iterNoeud1 : this.carte.getGraphe().getNoeuds()) {
+		
+			for (Noeud iterNoeud2 : this.carte.getGraphe().getNoeuds()) {
+				
+				if( iterNoeud1 != iterNoeud2 ){
+					
+					System.out.println(iterNoeud1.getNom() + " -> " + iterNoeud2.getNom());
+					
+					PCC pcc = new PCC(this.carte.getGraphe(), new OD(iterNoeud1, iterNoeud2), 1.0, 0, this.carte.variablesDeCarte.afficheGrapheNonDirige);
+					this.carte.getTousLesPCC().put(new Integer(pcc.hashCode()), pcc);
+					
+					this.carte.parent.parent.statusBar.changeProgressBar(nbOdsCalculeesTotales++, nbOperation);
+				}
+			}
+		}
+		
+		Calendar c2 = Calendar.getInstance();
+		
+		long tempsExecution = c2.getTimeInMillis() - debut;
+		System.out.println("Temps d'execution (ms):" + tempsExecution);
+		
+	}
+}

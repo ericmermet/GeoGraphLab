@@ -1,0 +1,165 @@
+MenuBar.mFile=Fichier
+MenuBar.mNew=Nouveau Reseau
+MenuBar.mNewTab=Nouvel Onglet
+MenuBar.mOpen=Ouvrir
+MenuBar.mOpenXLS=Ouvrir des fichiers XLS...
+MenuBar.mOpenDOTPOS=Ouvrir des fichiers DOT/POS...
+MenuBar.mOpenShape=Ouvrir des fichiers Shape...
+MenuBar.mOpenShapePoints=Charger couche de points (nom + ponderation)...
+MenuBar.mOpenShapeODPoints=Charger Shape OD...
+MenuBar.mExport=Exporter
+MenuBar.mExportDOT=DOT...
+MenuBar.mExportTLP=TLP...
+MenuBar.mExportSVG=SVG...
+MenuBar.mExportSHP=SHP...
+MenuBar.mQuit=Quitter
+
+
+MenuBar.14=Outils
+MenuBar.15=Indicateurs
+MenuBar.16=Identifier les composantes connexes
+MenuBar.17=Calculer les barres Nord et Sud
+MenuBar.18=Liberer la memoire
+MenuBar.19=Centralite
+
+MenuBar.20=Centralite Intermediaire
+MenuBar.21=Centralite de Proximite
+MenuBar.22=Accessibilite
+MenuBar.23=Indice de Shimbel
+MenuBar.24=Eloignement
+MenuBar.25=Eloignement Moyen
+MenuBar.26=Eloignement Minimum
+MenuBar.27=Eloignement Maximum
+MenuBar.28=Circuite
+MenuBar.29=Flux
+
+MenuBar.30=Centralite Probit
+MenuBar.31=Topologique
+mGeometrie=Géométrique
+MenuBar.32=Centralite de Degre
+MenuBar.33=Centralite de Pouvoir
+MenuBar.34=Triangles
+MenuBar.35=Carres
+MenuBar.36=Chemins de contournement
+MenuBar.37=Empan
+MenuBar.38=Rayon Proximal
+MenuBar.39=Rayon Distal
+
+MenuBar.40=K Closest First Tree
+MenuBar.41=Autres
+MenuBar.42=K Plus courts chemins superposes
+MenuBar.43=Flux PCC
+MenuBar.44=Theorie des graphes
+MenuBar.45=Chemin Eulerien
+MenuBar.46=Chemin Hamiltonien
+MenuBar.47=Arbres
+MenuBar.48=Arbre Couvrant de Poids Minimum (Kruskal)
+MenuBar.49=Arbre Couvrant des plus courts chemins
+
+MenuBar.50=Pre-Traitements
+MenuBar.51=Eviter les noeuds en doublons
+MenuBar.52=Autonommer les Arcs % Noeuds
+MenuBar.53=Autopondere les Arcs % Distance Euclidienne (Grille)
+MenuBar.54=Inverser les poids des arcs
+MenuBar.55=Supprimer les noeuds fantomes
+MenuBar.56=Triangulation et maillage
+MenuBar.57=Reseau de reference (Delaunay)
+MenuBar.58=Surfaces de Voronoi
+MenuBar.59=Calcul de tous les plus courts chemins
+
+MenuBar.60=Recherche de chemins de memes longueurs
+MenuBar.61=Configuration
+MenuBar.62=Configuration de la legende...
+MenuBar.63=Fenetres
+MenuBar.64=Algorithmes
+MenuBar.65=Couches d'affichages
+MenuBar.66=Listes des noeuds
+MenuBar.67=Listes des aretes
+MenuBar.mWindowLayout=Themes
+MenuBar.mWindowBulles=Bulles
+MenuBar.mWindowEclipse=Eclipse
+
+MenuBar.71=Ouverture de fichiers XLS
+MenuBar.72=Ouverture d'un fichier DOT
+MenuBar.73=user.dir
+MenuBar.74=Fichier réseau dot  (*.dot)
+MenuBar.75=dot
+MenuBar.76=Ouverture d'un fichier Shape
+MenuBar.77=user.dir
+MenuBar.78=Fichier Shape  (*.shp)
+MenuBar.79=shp
+
+MenuBar.80=Affichage ?
+MenuBar.DebugTexteOuvertureShapePoints=Ouverture d'un fichier Shape / Couche Points
+MenuBar.DebugTexteOuvertureShapeODPoints=Ouverture d'un fichier Shape Points - Espace relationnel OD
+MenuBar.DebugUserDir=user.dir
+MenuBar.83=Export en DOT \!
+MenuBar.84=user.dir
+MenuBar.85=Enregistrer
+MenuBar.86=Enregistrer
+MenuBar.87=Erreur de fichier ou de repertoire pour l'export DOT
+MenuBar.88=Export en TLP \!
+MenuBar.89=Export en SVG \!
+
+MenuBar.90=user.dir
+MenuBar.91=Enregistrer
+MenuBar.92=Enregistrer
+MenuBar.93=Erreur de fichier ou de repertoire pour l'export DOT
+MenuBar.94=Export en Shape \!
+MenuBar.95=user.dir
+MenuBar.96=Enregistrer
+MenuBar.97=Enregistrer
+MenuBar.98=Erreur de fichier ou de repertoire pour l'export Shape
+MenuBar.99=Goodbye \!
+
+MenuBar.100=Tous les plus courts chemins
+MenuBar.101=Identification de chemins de memes longueurs sur le reseau
+MenuBar.102=Calcul de reseau de Delaunay
+MenuBar.103=Calcul des surfaces de Voronoi
+MenuBar.104=Calcul de la centralite
+MenuBar.105=Calcul de la centralite
+MenuBar.106=Calcul de la centralite
+MenuBar.107=Calcul de l'accessibilite de Shimbel
+MenuBar.108=Calcul de l'eloignement moyen
+MenuBar.109=Calcul de l'eloignement minimum
+
+MenuBar.110=Calcul de l'eloignement maximum
+MenuBar.111=Calcul de la circuite
+MenuBar.112=Calcul de l'empan
+MenuBar.113=Calcul du rayon distal
+MenuBar.114=Calcul du rayon proximal
+MenuBar.115=Calcul des kPCC Superpose
+MenuBar.116=Calcul d'un flux de PCC
+MenuBar.117=Calcul des k Closest First Tree
+MenuBar.118=Calcul des Triangles
+MenuBar.119=Test Graphe Eulerien
+
+MenuBar.120=Test Graphe Hamiltonien
+MenuBar.121=Il faut selectionner au moins un noeud
+MenuBar.122=Eviter les noms de noeuds en doublons
+MenuBar.123=V
+MenuBar.124=Nom 
+MenuBar.125=\ - 
+MenuBar.126=Renomage de 
+MenuBar.127=\ noeuds
+MenuBar.128=\ - 
+MenuBar.129=break
+
+MenuBar.130=\ , poids :
+MenuBar.131=\ , poids distance :
+MenuBar.132=Suppression de 
+MenuBar.133=Nb composantes connexes : 
+MenuBar.134=Nombre de noeuds pour la composante n°
+MenuBar.135=\ : 
+MenuBar.136=Fenetre Algorithme
+MenuBar.137=Fenetre Couches
+MenuBar.138=Fenetre Noeuds
+MenuBar.139=Fenetre Aretes
+
+MenuBar.mConfigLang = Langue
+MenuBar.mConfigLangFrancais = Français
+MenuBar.mConfigLangAnglais = Anglais
+
+ToolBar.2=NouvelleCouche
+
+GGL.user.dir=\

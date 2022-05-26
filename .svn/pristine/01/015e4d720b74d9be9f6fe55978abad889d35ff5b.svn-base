@@ -1,0 +1,128 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm.constantes;
+
+import java.awt.BasicStroke;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Color;
+
+/** classe comprenant les constantes genrales de l'application */
+public class ConstantesApplication {
+	/* variable Debug */
+	public static boolean debug = true;
+	public static final Dimension tailleEcran = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
+	public static int tailleFenetreX = tailleEcran.width;
+	public static int tailleFenetreY = tailleEcran.height;
+	
+	public static int tailleFenetreX_div2 = tailleEcran.width / 2;
+	public static int tailleFenetreY_div2 = tailleEcran.height / 2;
+	
+	public static Dimension tailleFenetre = new Dimension(tailleFenetreX, tailleFenetreY);
+	
+	public static final Color DEFAULT_BG_COLOR = Color.decode("#FAFBEF"); //
+	public static final Color defaultColor = Color.BLACK;
+	public static final Color selectedColorGraphicObject = Color.RED;
+	public static final Color selectedColorVertex = Color.GREEN;// /Color.decode("#7D42C1");	public static final Color unselectedColorVertex = Color.BLUE;
+	public static final Color boundColorVertex = Color.BLACK;
+	public static final Color selectedColorMetaVertex = Color.RED;
+	public static final Color unselectedColorMetarVertex = Color.ORANGE;
+	public static final Color boundColorMetaVertex = Color.BLACK;
+	public static final Color selectedColorEdge = Color.GREEN;
+	public static final Color unselectedColorEdge = Color.DARK_GRAY;
+
+	public static final Color vertexDelaunayColor = Color.CYAN;
+	public static final Color edgeDelaunayColor = Color.CYAN;
+	public static final Color voronoiCellColor = Color.DARK_GRAY;
+	public static final Color agregationColor = Color.ORANGE;
+	public static Color drawingColorEdge = unselectedColorEdge;
+	public static Color drawingColorVertex = unselectedColorVertex;
+	public static Color drawingColorZone = unselectedColorMetarVertex;
+	
+	public static int vertexRadiusMin = 1;
+	public static int vertexRadiusMax = 200;
+	public static int vertexRadius = 4;
+	public static int agregateVertexRadius = 6;
+	public static int vertexRadiusMaxIndicatorView = 10;
+	public static int nbMarques = 6;
+	
+	public static int edgeWidthMin = 1;
+	public static int edgeWidthMax = 200;
+	public static int edgeWidth = 3;
+	
+	public static int bufferZoneAgregeeMin = 0;
+	public static int bufferZoneAgregee = vertexRadius * 5;
+	public static int bufferZoneAgregeeMax = vertexRadiusMax * 15;
+	
+	public static final int typeVertex = 0;
+	public static final int typeEdge = 1;
+	public static final int typeMetaVertex = 2;
+	public static final int typeVoronoiCell = 3;
+	
+	// Mode de clic souris	public static final int selectionMode = 0;
+	public static final int drawingNodesMode = 1;
+	public static final int drawingEdgesMode = 2;
+	public static final int drawingZonesMode = 3;
+	public static final int moveNodeMode = 4;
+	public static final int zoomInMode = 11;
+	public static final int zoomOutMode = 9;
+	public static final int dragMode = 7;
+	public static final int resizingMode = 6;
+	public static final int drawPCC = 18;
+	
+	public static boolean dragEnabled = false;
+	
+	// Mode d'affichage des indicateurs	public static final int indicateurDiametre = 0;
+	public static final int indicateurCouleur = 9;
+	
+	public static final int viewNormal = 0;
+	public static final int viewCentrality = 1;
+	public static final int viewAccessibility = 2;
+	public static final int viewEloignementMoyen = 3;
+	public static final int viewRadius = 4;
+	
+	// Curseur de souris	public static final Cursor defaultCursor = new Cursor(Cursor.DEFAULT_CURSOR);
+	public static final Cursor moveCursor = new Cursor(Cursor.HAND_CURSOR);
+	
+	//Dashed Line
+	final static float dash1[] = {10.0f};
+    public final static BasicStroke dashed = new BasicStroke(2.0f,
+                                          BasicStroke.CAP_BUTT,
+                                          BasicStroke.JOIN_MITER,
+                                          10.0f, dash1, 0.0f);
+    public final static BasicStroke normalStroke = new BasicStroke();
+	
+	public static final int txtSimple = 0;
+	public static final int txtExpert = 1;
+	
+	public static String affichageEnCours = new String("Vue Normale");
+	public static boolean afficheGraphe = true;
+	public static boolean afficheGrapheDelaunay = false;
+	public static boolean afficheVoronoi = false;
+	public static boolean afficheGrapheNonDirige = true;
+	public static boolean afficheAgregation = true;
+	public static boolean afficheSousReseau = true;
+	public static boolean afficheImageDeFond = false;
+	
+//	public static String version = "0.1.9"; 	// Ajout export shape
+//	public static String version = "0.1.10"; 	// Correction Bug - dernier attribut du shape non visible
+//	public static String version = "0.1.11"; 	// Drag exploration, operateurs ternaires add et mult, export shp + corrections bugs
+//	public static String version = "0.1.12"; 	// Sélection blocs opérateurs + corrections centralité
+//	public static String version = "0.1.13"; 	// Correction Bugs - déplacement connecteurs
+//	public static String version = "0.1.14"; 	// Version plugin Irstea
+//	public static String version = "0.2.2";		// Ajout chargement shape région + chargement espace OD + calcul centralité sur espace OD
+	public static String version = "0.2.3";	// Version ajout geometry JTS
+	public static String textSystem = "GeoGraphLab " + 
+				version + 
+				" by Eric Mermet (eric.mermet@gmail.com)\n" +
+				" Laboratoire COGIT-IGN (2007-2012) http://recherche.ign.fr/labos/cogit/cv.php?nom=Mermet \n" +
+				" Graph-it (2013) http://www.graph-it.eu";
+	
+	public static String currentWorkingDirectory = "";
+	
+}

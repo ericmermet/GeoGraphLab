@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<decision_support>
+	
+	<gglVersion>0.2.4-SNAPSHOT</gglVersion>
+
+	<indicators>
+
+		<indicator>
+			<name>TOURISME</name>
+			<attribute_name>TOUR_ABS_N</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>
+		<indicator>
+			<name>SERVICES_PROX</name>
+			<attribute_name>SERV_PR_N</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>
+		<indicator>
+			<name>SERVICES_INT</name>
+			<attribute_name>SERV_INT_N</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>
+		<indicator>
+			<name>TRANSPORT_AEROPRT</name>
+			<attribute_name>AEROPRT</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>
+		<indicator>
+			<name>TRANSPORT_GARE_RT</name>
+			<attribute_name>GR_RT</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>
+		<indicator>
+			<name>TRANSPORT_GARE_VR</name>
+			<attribute_name>GR_VR</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>
+		<indicator>
+			<name>TRANSPORT_GARE_VRFRT</name>
+			<attribute_name>GR_VRFRT</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>
+		<indicator>
+			<name>SECOURS_POMPIER</name>
+			<attribute_name>POMPIERS</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>	
+		<indicator>
+			<name>SECOURS_GENDARM</name>
+			<attribute_name>GENDARM</attribute_name>
+			<theme>ATT_SAISONIER</theme>
+			<component>nodes</component>			
+		</indicator>	
+	</indicators>
+
+	<operations>
+
+		<operation>
+			<result>INDICE_UN_NONPOND</result>
+			<theme>ATT_SAISONIER</theme>
+			<operand_1>TOUR_ABS_N</operand_1>
+			<weight_1>0.11</weight_1>
+			<operand_2>SERV_PR_N</operand_2>
+			<weight_2>0.11</weight_2>
+			<operand_3>SERV_INT_N</operand_3>
+			<weight_3>0.11</weight_3>
+			<operand_4>AEROPRT</operand_4>
+			<weight_4>0.11</weight_4>
+			<operand_5>GR_VR</operand_5>
+			<weight_5>0.11</weight_5>
+			<operand_6>GR_RT</operand_6>
+			<weight_6>0.11</weight_6>
+			<operand_7>GR_VRFRT</operand_7>
+			<weight_7>0.11</weight_7>
+			<operand_8>POMPIERS</operand_8>
+			<weight_8>0.11</weight_8>
+			<operand_9>GENDARM</operand_9>
+			<weight_9>0.11</weight_9>
+		</operation>
+
+		<operation>
+			<result>INDICE_UN_POND</result>
+			<theme>ATT_SAISONIER</theme>
+			<operand_1>TOUR_ABS_N</operand_1>
+			<weight_1>0.25</weight_1>
+			<operand_2>SERV_PR_N</operand_2>
+			<weight_2>0.125</weight_2>
+			<operand_3>SERV_INT_N</operand_3>
+			<weight_3>0.125</weight_3>
+			<operand_4>AEROPRT</operand_4>
+			<weight_4>0.0625</weight_4>
+			<operand_5>GR_VR</operand_5>
+			<weight_5>0.0625</weight_5>
+			<operand_6>GR_RT</operand_6>
+			<weight_6>0.0625</weight_6>
+			<operand_7>GR_VRFRT</operand_7>
+			<weight_7>0.0625</weight_7>
+			<operand_8>POMPIERS</operand_8>
+			<weight_8>0.125</weight_8>
+			<operand_9>GENDARM</operand_9>
+			<weight_9>0.125</weight_9>
+		</operation>
+
+	</operations>
+
+</decision_support>

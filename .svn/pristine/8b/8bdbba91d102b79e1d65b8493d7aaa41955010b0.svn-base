@@ -1,0 +1,229 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.graphe;
+
+import fr.ign.cogit.geographlab.exploration.GestionnaireDeNoeuds;
+import fr.ign.cogit.geographlab.graphe.listeners.NoeudListener;
+import fr.ign.cogit.geographlab.visu.NoeudGraphique;
+
+import java.awt.Point;
+
+import javax.swing.event.EventListenerList;
+
+public class Noeud extends ObjetTopologique implements Cloneable {
+	
+	private int iD;
+	private double ponderation = 2.0;
+	private Point positionNoeud = new Point();
+	private NoeudGraphique noeudGraphique;
+	private boolean isSelectedOrigine =false , isSelectedDestination= false;
+	
+	private final EventListenerList listenersPositionNoeuds = new EventListenerList();
+	private final EventListenerList listenersSelectionNoeuds = new EventListenerList();
+	private final EventListenerList listenersNomNoeuds = new EventListenerList();
+	
+	public Noeud(String nom) {
+		super(nom);
+		this.noeudGraphique = new NoeudGraphique(this);
+		this.iD = GestionnaireDeNoeuds.getID(this);
+	}
+	
+	public Noeud(String nom, String nomIndicateur, Point position) {
+		super(nom, nomIndicateur);
+		this.noeudGraphique = new NoeudGraphique(this);
+		this.iD = GestionnaireDeNoeuds.getID(this);
+		this.positionNoeud = position;
+		this.noeudGraphique.setPosition(position);
+	}
+	
+	public Noeud(String nom, int iD) {
+		this(nom);
+		this.iD = iD;
+	}
+	
+	public Noeud(String nom, Point position) {
+		this(nom);
+		this.positionNoeud = position;
+		this.noeudGraphique.setPosition(position);
+	}
+	
+	public Noeud(Point position) {
+		this(new String("V_" + new Integer((int) (10000 * Math.random())).toString()), position);
+	}
+	
+	public Noeud(Point position, String nomIndicateur) {
+		this(new String("V_" + new Integer((int) (10000 * Math.random())).toString()), nomIndicateur, position);
+	}
+	
+	public Noeud(Noeud autreNoeud) {
+		this(autreNoeud.getNom(), autreNoeud.getID());
+		setPonderation(2.0);
+		setPosition(autreNoeud.getPosition());
+		this.setSelected(false);
+		// this.valeurVue = new Double(0.0);
+		// this.getNoeudGraphique().setValeurGraphique(new Double(0.0));
+	}
+	
+	public int getID() {
+		return this.iD;
+	}
+	
+	@Override
+	public void setNom(String nom) {
+		super.setNom(nom);
+		//		fireNomNoeudChange();
+	}
+	
+	public Point getPosition() {
+		return this.positionNoeud;
+	}
+	
+	public int getXPosition() {
+		return this.positionNoeud.x;
+	}
+	
+	public int getYPosition() {
+		return this.positionNoeud.y;
+	}
+	
+	public void setPosition(Point position) {
+		this.positionNoeud = position;
+		firePositionNoeudChange();
+	}
+	
+	public void setXPosition(int x) {
+		this.positionNoeud.x = x;
+		firePositionNoeudChange();
+	}
+	
+	public void setYPosition(int y) {
+		this.positionNoeud.y = y;
+		firePositionNoeudChange();
+	}
+	
+	public void setSelected(boolean selected) {
+		super.setSelected(selected);
+		fireSelectionChange();
+	}
+	
+	public boolean isSelected() {
+		return super.isSelected();
+	}
+	
+	public void setSelectedOrigine(boolean isSelectedOrigine) {
+		this.isSelectedOrigine = isSelectedOrigine;
+	}
+	
+	public boolean isSelectedOrigine() {
+		return this.isSelectedOrigine;
+	}
+	
+	public void setSelectedDestination(boolean isSelectedDestination) {
+		this.isSelectedDestination = isSelectedDestination;
+	}
+	
+	public boolean isSelectedDestination() {
+		return this.isSelectedDestination;
+	}
+	
+	public void setPonderation(double ponderation) {
+		this.ponderation = new Double(ponderation);
+	}
+	
+	public double getPonderation() {
+		return this.ponderation;
+	}
+	
+	public NoeudGraphique getNoeudGraphique() {
+		return this.noeudGraphique;
+	}
+	
+	public void setNoeudGraphique(NoeudGraphique noeudGraphique) {
+		this.noeudGraphique = noeudGraphique;
+	}
+	
+	public void addNomNoeudListener(NoeudListener listener) {
+		this.listenersNomNoeuds.add(NoeudListener.class, listener);
+	}
+	
+	public void removeNomNoeudListener(NoeudListener listener) {
+		this.listenersNomNoeuds.remove(NoeudListener.class, listener);
+	}
+	
+	public void addPositionNoeudListener(NoeudListener listener) {
+		this.listenersPositionNoeuds.add(NoeudListener.class, listener);
+	}
+	
+	public void removePositionNoeudListener(NoeudListener listener) {
+		this.listenersPositionNoeuds.remove(NoeudListener.class, listener);
+	}
+	
+	public void addSelectionNoeudListener(NoeudListener listener) {
+		this.listenersSelectionNoeuds.add(NoeudListener.class, listener);
+	}
+	
+	public void removeSelectionNoeudListener(NoeudListener listener) {
+		this.listenersSelectionNoeuds.remove(NoeudListener.class, listener);
+	}
+	
+	public NoeudListener[] getNomNoeudListeners() {
+		return this.listenersNomNoeuds.getListeners(NoeudListener.class);
+	}
+	
+	public NoeudListener[] getPositionNoeudListeners() {
+		return this.listenersPositionNoeuds.getListeners(NoeudListener.class);
+	}
+	
+	public NoeudListener[] getSelectionNoeudListeners() {
+		return this.listenersSelectionNoeuds.getListeners(NoeudListener.class);
+	}
+	
+	protected void fireNomNoeudChange() {
+		for (NoeudListener listener : getNomNoeudListeners()) {
+			listener.nomChange();
+		}
+	}
+	
+	protected void firePositionNoeudChange() {
+		for (NoeudListener listener : getPositionNoeudListeners()) {
+			listener.positionChange();
+		}
+	}
+	
+	protected void fireSelectionChange() {
+		for (NoeudListener listener : getSelectionNoeudListeners()) {
+			listener.selectionChange();
+		}
+	}
+	
+	public boolean equals(Noeud n) {
+		if( this.iD == n.iD )
+			return true;
+		return false;
+	}
+	
+	@Override
+	public int hashCode(){
+		return this.iD;
+	}
+	
+	@Override
+	public Noeud clone() {
+		
+		Noeud nouveauNoeud = new Noeud(this.getNom(), this.getID());
+		
+		nouveauNoeud.setPonderation(0.0);
+		nouveauNoeud.setPosition(this.getPosition());
+		nouveauNoeud.setSelected(false);
+		nouveauNoeud.getNoeudGraphique().setPosition(nouveauNoeud.getPosition());
+		// nouveauNoeud.getNoeudGraphique().setValeurGraphique(new Double(0.0));
+		
+		return nouveauNoeud;
+	}
+	
+}

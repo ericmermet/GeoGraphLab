@@ -1,0 +1,233 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * MainFrame_Irstea.java in fr.irstea.adret.geographlab.plugins.ihm
+ * 
+ */
+package fr.irstea.adret.geographlab.plugins.ihm;
+
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+
+import java.awt.ScrollPane;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Scanner;
+
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.jdom.input.SAXBuilder;
+import org.jdom.Attribute;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.xml.sax.Attributes;
+
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+import fr.ign.cogit.geographlab.test.Debug;
+import fr.irstea.adret.geographlab.plugins.lang.Messages_Irstea;
+
+/**
+ * @author eric
+ *
+ */
+public class MainFrame_Irstea extends JFrame {
+	
+	private static final long serialVersionUID = 1L;
+	
+	JTextField tFileXML;
+	JTextField tShapeFile;
+	
+	private static JTextArea textArea;
+	
+	private static ScrollPane scrollpane = new ScrollPane();
+	
+	private static Scanner scanner;
+	
+	private static Document jdomDocument;
+	static Element racine;
+	
+	
+	/**
+	 * Create the panel.
+	 */
+	public MainFrame_Irstea() {
+		
+		this.setSize(900, 575);
+		this.setLocation(ConstantesApplication.tailleFenetreX_div2- this.getWidth()/2,
+				ConstantesApplication.tailleFenetreY_div2-this.getHeight()/2);
+		getContentPane().setLayout(null);
+		
+		textArea = new JTextArea();
+		textArea.setBounds(400, 12, 486, 526);
+		getContentPane().add(textArea);
+		
+		scrollpane.setBounds(400, 12, 486, 526);
+		scrollpane.add(textArea);
+		getContentPane().add(scrollpane);
+		
+		JButton bCancel = new JButton("Annuler");
+		bCancel.setBounds(271, 513, 117, 25);
+		getContentPane().add(bCancel);
+		bCancel.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				MainFrame_Irstea.this.dispose();
+			}
+		});
+		
+		JButton bOk = new JButton("Ok");
+		bOk.setBounds(142, 513, 117, 25);
+		getContentPane().add(bOk);
+		
+		JLabel lblNewLabel = new JLabel("Ouvrir XML ...");
+		lblNewLabel.setBounds(12, 12, 112, 15);
+		getContentPane().add(lblNewLabel);
+		
+		JButton bOpenXML = new JButton("...");
+		bOpenXML.setBounds(130, 7, 30, 25);
+		getContentPane().add(bOpenXML);
+		bOpenXML.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				
+				Debug.printDebug(Messages_Irstea.getString("MenuBar_Irstea.debugTextOpenXML")); //$NON-NLS-1$
+				
+				JFileChooser inFileDlg = new JFileChooser(System.getProperty(Messages_Irstea.getString("MenuBar_Irstea.userDir"))); //$NON-NLS-1$
+				
+				inFileDlg.setFileFilter(new FileNameExtensionFilter(Messages_Irstea.getString("MenuBar_Irstea.textWindow"), Messages_Irstea.getString("MenuBar.extension"))); //$NON-NLS-1$ //$NON-NLS-2$
+				int returnVal = inFileDlg.showOpenDialog(MainFrame_Irstea.this);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					String browseDir = inFileDlg.getCurrentDirectory().toString();
+					Debug.printDebug(browseDir);
+					
+					String inFile = null;
+					inFile = inFileDlg.getSelectedFile().toString();
+					inFileDlg.setCurrentDirectory(new File(inFile));
+					//						fop.ouvrirFichierShape(browseDir, inFile);
+					try {
+						readXMLFile(inFile);
+						MainFrame_Irstea.this.tFileXML.setText(inFile);
+						
+						parseXMLFile(inFile);
+						
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (JDOMException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					Debug.printDebug(Messages_Irstea.getString("MenuBar_Irstea.debugTextDisplay")); //$NON-NLS-1$
+				}
+				
+			}
+		});
+		
+		this.tFileXML = new JTextField();
+		this.tFileXML.setBounds(172, 10, 216, 19);
+		getContentPane().add(this.tFileXML);
+		this.tFileXML.setColumns(10);
+		
+		JButton bOpenShape = new JButton("...");
+		bOpenShape.setBounds(130, 49, 30, 25);
+		getContentPane().add(bOpenShape);
+		
+		JLabel lblNewLabel_1 = new JLabel("Ouvrir Shape ...");
+		lblNewLabel_1.setBounds(12, 54, 112, 15);
+		getContentPane().add(lblNewLabel_1);
+		
+		JPanel pCheckBoxes = new JPanel();
+		pCheckBoxes.setBounds(12, 81, 376, 420);
+		getContentPane().add(pCheckBoxes);
+		
+		this.tShapeFile = new JTextField();
+		this.tShapeFile.setBounds(172, 52, 216, 19);
+		getContentPane().add(this.tShapeFile);
+		this.tShapeFile.setColumns(10);
+		
+	}
+	
+	public static void readXMLFile(String nom) throws FileNotFoundException  //lecture du fichier
+	{
+		
+		scanner= new Scanner(new File(nom));
+		try {
+			scanner= new Scanner(new File(nom));
+			
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
+				textArea.append(line+ "\n");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		scanner.close();
+	}
+	
+	public static void parseXMLFile(String inFile) throws JDOMException, IOException {
+		
+		SAXBuilder sxb = new SAXBuilder();
+		jdomDocument = sxb.build(new File(inFile));
+		racine = jdomDocument.getRootElement();
+//		racine.getChildren("indicators")
+		for (Object iterIndicators : racine.getChild("indicators").getChildren() ) {
+			System.out.println(((Element)iterIndicators).getChild("name").getValue());
+			System.out.println(((Element)iterIndicators).getChild("attribute_name").getValue());
+			System.out.println(((Element)iterIndicators).getChild("theme").getValue());
+			System.out.println(((Element)iterIndicators).getChild("component").getValue());
+
+//			racine.getChild("indicators").getChild("indicator").getChild("name").getValue()
+		}
+		
+		for (Object iterOperations : racine.getChild("operations").getChildren()) {
+			System.out.println(iterOperations);
+		}
+		
+	}
+	
+	static void afficheALLTypes()
+	{
+		//	   System.out.println(racine.getName());
+		//	   System.out.println(racine.getAttributes());
+
+
+		//On crée une List contenant tous les noeuds "etudiant" de l'Element racine
+		List<Element> list = racine.getChildren("indicators");
+
+		//On crée un Iterator sur notre liste
+		Iterator<Element> i = list.iterator();
+		//Boucle sur les types de non conformités
+		while(i.hasNext())
+		{
+			//On recrée l'Element courant à chaque tour de boucle afin de
+			//pouvoir utiliser les méthodes propres aux Element comme :
+			//selectionner un noeud fils, modifier du texte, etc...
+//			if( i.next() instanceof Element ) {
+				Element courant = (Element)i.next();
+				List<Attribute> listAttr = courant.getAttributes();
+				
+				System.out.println(listAttr.get(0).getValue());
+				//On affiche le nom de l'element courant
+
+//			}
+		}
+	}
+}

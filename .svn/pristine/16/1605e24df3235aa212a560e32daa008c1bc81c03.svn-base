@@ -1,0 +1,938 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm.bars;
+
+
+import fr.ign.cogit.geographlab.algo.ArbreCouvrantDesPCC;
+import fr.ign.cogit.geographlab.algo.ArbreCouvrantPoidsMinimum;
+import fr.ign.cogit.geographlab.algo.FindKShortestPath;
+import fr.ign.cogit.geographlab.algo.geom.RegionsDeVoronoi;
+import fr.ign.cogit.geographlab.algo.indicateurs.APSP;
+import fr.ign.cogit.geographlab.algo.indicateurs.CentraliteDeDegre;
+import fr.ign.cogit.geographlab.algo.indicateurs.CentraliteDePouvoir;
+import fr.ign.cogit.geographlab.algo.indicateurs.CentraliteIntermediaire2;
+import fr.ign.cogit.geographlab.algo.indicateurs.CentraliteProximite;
+import fr.ign.cogit.geographlab.algo.indicateurs.Circuite;
+import fr.ign.cogit.geographlab.algo.indicateurs.EloignementMax;
+import fr.ign.cogit.geographlab.algo.indicateurs.EloignementMin;
+import fr.ign.cogit.geographlab.algo.indicateurs.EloignementMoyen;
+import fr.ign.cogit.geographlab.algo.indicateurs.Empan;
+import fr.ign.cogit.geographlab.algo.indicateurs.KClosestFirstTree;
+import fr.ign.cogit.geographlab.algo.indicateurs.KPCCSuperposes;
+import fr.ign.cogit.geographlab.algo.indicateurs.ParallelKPCCSuperposes;
+import fr.ign.cogit.geographlab.algo.indicateurs.RayonDistal;
+import fr.ign.cogit.geographlab.algo.indicateurs.RayonProximal;
+import fr.ign.cogit.geographlab.algo.maths.Barycentre;
+import fr.ign.cogit.geographlab.algo.maths.TriangulationDelaunay2;
+import fr.ign.cogit.geographlab.algo.topologie.Triangles;
+import fr.ign.cogit.geographlab.cheminements.CheminEulerien;
+import fr.ign.cogit.geographlab.cheminements.CheminHamiltonien;
+import fr.ign.cogit.geographlab.cheminements.Constantes;
+import fr.ign.cogit.geographlab.fichier.FileOperation;
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.config.ConfigLegende;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+import fr.ign.cogit.geographlab.test.Debug;
+import fr.ign.cogit.geographlab.visu.NoeudGraphique;
+import fr.ign.cogit.geographlab.visu.ObjetGraphique;
+
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.geom.Line2D;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+
+import java.util.Random;
+import java.util.Set;
+
+import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.geotools.feature.SchemaException;
+import org.jgrapht.Graphs;
+import org.jgrapht.alg.ConnectivityInspector;
+
+import bibliothek.extension.gui.dock.theme.BubbleTheme;
+import bibliothek.extension.gui.dock.theme.EclipseTheme;
+import bibliothek.gui.dock.common.menu.CLookAndFeelMenuPiece;
+import bibliothek.gui.dock.common.menu.CThemeMenuPiece;
+import bibliothek.gui.dock.facile.menu.SubmenuPiece;
+import bibliothek.gui.dock.themes.NoStackTheme;
+
+public class MenuBar extends JMenuBar {
+	
+	private static final long serialVersionUID = 1L;
+	
+	MainWindow parent;
+	
+	private JMenu mFile = new JMenu("Fichier", true);
+	private JMenuItem mNew = new JMenuItem("Nouveau Reseau");
+	private JMenuItem mNewTab = new JMenuItem("Nouvel Onglet");
+	private JMenu mOpen = new JMenu("Ouvrir");
+	private JMenuItem mOpenXLS = new JMenuItem("Ouvrir des fichiers XLS...");
+	private JMenuItem mOpenDOTPOS = new JMenuItem("Ouvrir des fichiers DOT/POS...");
+	private JMenuItem mOpenShape = new JMenuItem("Ouvrir des fichiers Shape...");
+	private JMenuItem mOpenShapePoints = new JMenuItem("Ajouter une couche de points (nom + ponderation)...");
+	private JMenu mExport = new JMenu("Exporter");
+	private JMenuItem mExportDOT = new JMenuItem("DOT...");
+	private JMenuItem mExportTLP = new JMenuItem("TLP...");
+	private JMenuItem mExportSVG = new JMenuItem("SVG...");
+	private JMenuItem mExportSHP = new JMenuItem("SHP...");
+	private JMenuItem mQuit = new JMenuItem("Quitter");
+	
+	private JMenu mTools = new JMenu("Outils", true);
+	private JMenu mCalcIndic = new JMenu("Indicateurs", true);
+	private JMenuItem mIdentifyCompConnex = new JMenuItem("Identifier les composantes connexes");
+	private JMenuItem mCalcNordSud = new JMenuItem("Calculer les barres Nord et Sud");
+	private JMenuItem mFreeMemory = new JMenuItem("Liberer la memoire");
+	
+	private JMenu mMenuCentrality = new JMenu("Centralite", true);
+	private JMenuItem mCalcBetweenessCentrality = new JMenuItem("Centralite Intermediaire");
+	private JMenuItem mCalcClosenessCentrality = new JMenuItem("Centralite de Proximite");
+	
+	private JMenu mMenuAccessibility = new JMenu("Accessibilite", true);
+	private JMenuItem mCalcAccessibilityShimbel = new JMenuItem("Indice de Shimbel");
+	private JMenu mMenuEloignement = new JMenu("Eloignement", true);
+	private JMenuItem mCalcEloignementMoyen = new JMenuItem("Eloignement Moyen");
+	private JMenuItem mCalcEloignementMin = new JMenuItem("Eloignement Minimum");
+	private JMenuItem mCalcEloignementMax = new JMenuItem("Eloignement Maximum");
+	private JMenuItem mCalcCircuite = new JMenuItem("Circuite");
+	
+	private JMenu mMenuFlux = new JMenu("Flux", true);
+	private JMenuItem mCalcProbit = new JMenuItem("Centralite Probit");
+	
+	private JMenu mTopologie = new JMenu("Topologique", true);
+	private JMenuItem mCalcCentralityDegree = new JMenuItem("Centralite de Degre");
+	private JMenuItem mCalcCentralityPouvoir = new JMenuItem("Centralite de Pouvoir");
+	private JMenuItem mCalcTriangles = new JMenuItem("Triangles");
+	private JMenuItem mCalcCarres = new JMenuItem("Carres");
+	
+	private JMenu mMenuCheminsContournements = new JMenu("Chemins de contournement", true);
+	private JMenuItem mCalcEmpan = new JMenuItem("Empan");
+	private JMenuItem mCalcRayonProximal = new JMenuItem("Rayon Proximal");
+	private JMenuItem mCalcRayonDistal = new JMenuItem("Rayon Distal");
+	private JMenuItem mCalcKClosestFirstTree = new JMenuItem("K Closest First Tree");
+	
+	private JMenu mMenuOhters = new JMenu("Autres", true);
+	private JMenuItem mCalcKPCCSuperpose = new JMenuItem("K Plus courts chemins superposes");
+	private JMenuItem mCalcFluxPCC = new JMenuItem("Flux PCC");
+	
+	private JMenu mCalcTheorieDesGraphes = new JMenu("Theorie des graphes", true);
+	private JMenuItem mCalcCheminEulerien = new JMenuItem("Chemin Eulerien");
+	private JMenuItem mCalcCheminHamiltonien = new JMenuItem("Chemin Hamiltonien");
+	private JMenu mArbres = new JMenu("Arbres", true);
+	private JMenuItem mArbreCouvrantPoidsMinimum = new JMenuItem("Arbre Couvrant de Poids Minimum (Kruskal)");
+	private JMenuItem mArbreCouvrantDesPCC = new JMenuItem("Arbre Couvrant des plus courts chemins");
+	
+	private JMenu mPreTraitements = new JMenu("Pre-Traitements", true);
+	private JMenuItem mRenameVertices = new JMenuItem("Eviter les noeuds en doublons");
+	private JMenuItem mAutoNameArc = new JMenuItem("Autonommer les Arcs % Noeuds");
+	private JMenuItem mAutoPondereArcs = new JMenuItem("Autopondere les Arcs % Distance Euclidienne (Grille)");
+	private JMenuItem mInversePoids = new JMenuItem("Inverser les poids des arcs");
+	private JMenuItem mDeleteVerticesZeroDegree = new JMenuItem("Supprimer les noeuds fantomes");
+	
+	private JMenu mTriangulationMaillage = new JMenu("Triangulation et maillage", true);
+	private JMenuItem mReseauReference = new JMenuItem("Reseau de reference (Delaunay)");
+	private JMenuItem mVoronoi = new JMenuItem("Surfaces de Voronoi");
+	
+	private JMenuItem mOD = new JMenuItem("Calcul de tous les plus courts chemins");
+	private JMenuItem mIdentifyKPCC = new JMenuItem("Recherche de chemins de memes longueurs");
+	
+	private JMenu mConfig = new JMenu("Configuration", true);
+	private JMenuItem mConfigLegend = new JMenuItem("Configuration de la legende...");
+	
+	private JMenu mWindow = new JMenu("Fenetres");
+	private JMenuItem mWindowAlgo = new JMenuItem("Algorithmes");
+	private JMenuItem mWindowLayer = new JMenuItem("Couches d'affichages");
+	private JMenuItem mWindowNodes = new JMenuItem("Listes des noeuds");
+	private JMenuItem mWindowEdges = new JMenuItem("Listes des aretes");
+	
+	private JMenu mWindowLayout = new JMenu("Themes");
+	private JMenuItem mWindowBulles = new JMenuItem("Bulles");
+	private JMenuItem mWindowEclipse = new JMenuItem("Eclipse");
+	
+	public MenuBar(MainWindow parent) {
+		super();
+		this.parent = parent;
+		initialize();
+	}
+	
+	private void initialize() {
+		/** Placement des menus */
+		
+		add(this.mFile);
+		add(this.mTools);
+		add(this.mConfig);
+		add(this.mWindow);
+		
+		/**
+		 * Menu FICHIER
+		 */
+		this.mFile.add(this.mNew);
+		
+		this.mFile.add(this.mNewTab);
+		
+		this.mFile.add(this.mOpen);
+		// this.mOpen.add(this.mOpenXLS);
+		this.mOpen.add(this.mOpenDOTPOS);
+		this.mOpen.add(this.mOpenShape);
+		this.mOpen.add(this.mOpenShapePoints);
+		
+		this.mFile.add(this.mExport);
+		this.mExport.add(this.mExportSHP);
+		this.mExport.add(this.mExportDOT);
+		this.mExport.add(this.mExportSVG);
+		this.mExport.add(this.mExportTLP);
+		
+		this.mFile.add(this.mQuit);
+		
+		/**
+		 * Menu OUTILS
+		 */
+		this.mTools.add(this.mCalcIndic);
+		
+		this.mCalcIndic.add(this.mMenuCentrality);
+		this.mMenuCentrality.add(this.mCalcBetweenessCentrality);
+		
+		this.mCalcIndic.add(this.mMenuAccessibility);
+		this.mMenuAccessibility.add(this.mCalcAccessibilityShimbel);
+		this.mMenuAccessibility.add(this.mMenuEloignement);
+		this.mMenuEloignement.add(this.mCalcEloignementMoyen);
+		this.mMenuEloignement.add(this.mCalcEloignementMin);
+		this.mMenuEloignement.add(this.mCalcEloignementMax);
+		this.mMenuEloignement.add(this.mCalcClosenessCentrality);
+		this.mMenuEloignement.add(this.mCalcCircuite);
+		
+		this.mCalcIndic.add(this.mMenuFlux);
+		this.mMenuFlux.add(this.mCalcProbit);
+		
+		this.mCalcIndic.add(this.mTopologie);
+		this.mTopologie.add(this.mCalcCentralityDegree);
+		this.mTopologie.add(this.mCalcCentralityPouvoir);
+		this.mTopologie.add(this.mCalcTriangles);
+		this.mTopologie.add(this.mCalcCarres);
+		
+		this.mCalcIndic.add(this.mMenuCheminsContournements);
+		this.mMenuCheminsContournements.add(this.mCalcEmpan);
+		this.mMenuCheminsContournements.add(this.mCalcRayonDistal);
+		this.mMenuCheminsContournements.add(this.mCalcRayonProximal);
+		this.mMenuCheminsContournements.add(this.mCalcKPCCSuperpose);
+		this.mMenuCheminsContournements.add(this.mCalcFluxPCC);
+		
+		this.mCalcIndic.add(this.mMenuOhters);
+		this.mMenuOhters.add(this.mCalcKClosestFirstTree);
+		
+		this.mTools.add(this.mCalcTheorieDesGraphes);
+		this.mCalcTheorieDesGraphes.add(this.mCalcCheminEulerien);
+		this.mCalcTheorieDesGraphes.add(this.mCalcCheminHamiltonien);
+		this.mCalcTheorieDesGraphes.add(this.mArbres);
+		this.mArbres.add(this.mArbreCouvrantPoidsMinimum);
+		this.mArbres.add(this.mArbreCouvrantDesPCC);
+		
+		this.mTools.add(this.mPreTraitements);
+		this.mPreTraitements.add(this.mRenameVertices);
+		this.mPreTraitements.add(this.mAutoNameArc);
+		this.mPreTraitements.add(this.mAutoPondereArcs);
+		this.mPreTraitements.add(this.mInversePoids);
+		this.mPreTraitements.add(this.mDeleteVerticesZeroDegree);
+		this.mPreTraitements.add(this.mCalcNordSud);
+		this.mPreTraitements.add(this.mIdentifyKPCC);
+		this.mPreTraitements.add(this.mIdentifyCompConnex);
+		
+		this.mTools.add(this.mTriangulationMaillage);
+		this.mTriangulationMaillage.add(this.mReseauReference);
+		this.mTriangulationMaillage.add(this.mVoronoi);
+		
+		this.mTools.add(this.mOD);
+		this.mTools.add(this.mFreeMemory);
+		
+		this.mConfig.add(this.mConfigLegend);
+		
+		this.mWindowAlgo.setEnabled(true);
+		this.mWindow.add(this.mWindowAlgo);
+		
+		this.mWindowLayer.setEnabled(true);
+		this.mWindow.add(this.mWindowLayer);
+		
+		this.mWindowNodes.setEnabled(true);
+		this.mWindow.add(this.mWindowNodes);
+		
+		this.mWindowEdges.setEnabled(true);
+		this.mWindow.add(this.mWindowEdges);
+		
+		this.mWindow.add(this.mWindowLayout);
+		this.mWindowLayout.add(this.mWindowBulles);
+		this.mWindowLayout.add(this.mWindowEclipse);
+		
+		/** item nouveau du menu fichier */
+		this.mNew.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de Nouveau  */
+			public void actionPerformed(ActionEvent e) {
+				// GetVue active
+				// (PanelMainDraw)(MainWindow.rootWindow.getFocusedView().getComponent())
+				MenuBar.this.parent.getPanelMainDrawActif().carte.razCarte();
+			}
+		});
+		
+		this.mNewTab.addActionListener(new ActionListener() { 
+		/** Declenche a l'appui de Nouvel Onglet */
+			public void actionPerformed(ActionEvent e) {
+				// Ajout au gestionnaire de panel
+				MenuBar.this.parent.panelsDraw.addNewPanel();
+			}
+		});
+		
+		/** item ouvrir du menu fichier */
+		this.mOpenXLS.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de Open XLS */
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Ouverture de fichiers XLS");
+				MenuBar.this.parent.panelActif.carte.razCarte();
+				
+			}
+		});
+		
+		this.mOpenDOTPOS.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de Open DOT */
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Ouverture d'un fichier DOT");
+				
+				JFileChooser inFileDlg = new JFileChooser(System.getProperty("user.dir"));
+				inFileDlg.setFileFilter(new FileNameExtensionFilter("Fichier réseau dot  (*.dot)", "dot"));
+				int returnVal = inFileDlg.showOpenDialog(MenuBar.this.parent);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					// MenuBar.this.parent.panelActif.carte.razCarte();
+					String browseDir = inFileDlg.getCurrentDirectory().toString();
+					Debug.printDebug(browseDir);
+					String inFile = null;
+					inFile = inFileDlg.getSelectedFile().toString();
+					FileOperation fop = new FileOperation(MenuBar.this.parent, MenuBar.this.parent.getPanelMainDrawActif());
+					try {
+						fop.ouvrirFichierGrapheDOT(browseDir, inFile);
+					} catch (MalformedURLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+//					Debug.printDebug("Affichage ?");
+
+					MenuBar.this.parent.getPanelMainDrawActif().centreVue();
+
+				}
+			}
+		});
+		
+		this.mOpenShape.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de  Open SHAPE 		 */
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Ouverture d'un fichier Shape");
+				
+				JFileChooser inFileDlg = new JFileChooser(System.getProperty("user.dir"));
+				inFileDlg.setFileFilter(new FileNameExtensionFilter("Fichier Shape  (*.shp)", "shp"));
+				int returnVal = inFileDlg.showOpenDialog(MenuBar.this.parent);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					MenuBar.this.parent.panelActif.carte.razCarte();
+					String browseDir = inFileDlg.getCurrentDirectory().toString();
+					Debug.printDebug(browseDir);
+					String inFile = null;
+					inFile = inFileDlg.getSelectedFile().toString();
+					FileOperation fop = new FileOperation(MenuBar.this.parent, MenuBar.this.parent.getPanelMainDrawActif());
+					try {
+						fop.ouvrirFichierShape(browseDir, inFile);
+					} catch (URISyntaxException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} catch (IOException e2) {
+						// TODO Auto-generated catch block
+						e2.printStackTrace();
+					}
+					Debug.printDebug("Affichage ?");
+				}
+			}
+		});
+		
+		this.mOpenShapePoints.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de Open SHAPE */
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Ouverture d'un fichier Shape / Couche Ponts");
+				
+				JFileChooser inFileDlg = new JFileChooser(System.getProperty("user.dir"));
+				int returnVal = inFileDlg.showOpenDialog(MenuBar.this.parent);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					String browseDir = inFileDlg.getCurrentDirectory().toString();
+					Debug.printDebug(browseDir);
+					String inFile = null;
+					inFile = inFileDlg.getSelectedFile().toString();
+					FileOperation fop = new FileOperation(MenuBar.this.parent, MenuBar.this.parent.getPanelMainDrawActif());
+					try {
+						fop.ouvrirFichierShapePoints(browseDir, inFile);
+					} catch (URISyntaxException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} catch (IOException e2) {
+						// TODO Auto-generated catch block
+						e2.printStackTrace();
+					}
+//					Debug.printDebug("Affichage ?");
+				}
+			}
+		});
+		
+		this.mExportDOT.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de ExportDOT */
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Export en DOT !");
+				JFileChooser outFileDlg = new JFileChooser(System.getProperty("user.dir"));
+				outFileDlg.setDialogTitle("Enregistrer");
+				outFileDlg.setApproveButtonText("Enregistrer");
+				int returnVal = outFileDlg.showOpenDialog(MenuBar.this.parent);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					try {
+						String browseDir = new String(outFileDlg.getSelectedFile().toString());
+						FileWriter fstream = new FileWriter(browseDir);
+						
+						FileOperation fop = new FileOperation(MenuBar.this.parent, MenuBar.this.parent.getPanelMainDrawActif());
+						fop.exportDOT(browseDir, fstream);
+					} catch (IOException e1) {
+						Debug.printDebug("Erreur de fichier ou de repertoire pour l'export DOT");
+					}
+				}
+			}
+		});
+		
+		this.mExportTLP.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de ExportTLP */
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Export en TLP !");
+				
+			}
+		});
+		
+		this.mExportSVG.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de ExportSVG */
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Export en SVG !");
+				JFileChooser outFileDlg = new JFileChooser(System.getProperty("user.dir"));
+				outFileDlg.setDialogTitle("Enregistrer");
+				outFileDlg.setApproveButtonText("Enregistrer");
+				int returnVal = outFileDlg.showOpenDialog(MenuBar.this.parent);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					try {
+						String browseDir = new String(outFileDlg.getSelectedFile().toString());
+						FileWriter fstream = new FileWriter(browseDir);
+						
+						FileOperation fop = new FileOperation(MenuBar.this.parent, MenuBar.this.parent.getPanelMainDrawActif());
+						fop.exportSVG(browseDir, fstream);
+					} catch (IOException e1) {
+						Debug.printDebug("Erreur de fichier ou de repertoire pour l'export DOT");
+					}
+				}
+			}
+		});
+		
+		this.mExportSHP.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de ExportSVG */
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				Debug.printDebug("Export en Shape !");
+				JFileChooser outFileDlg = new JFileChooser(System.getProperty("user.dir"));
+				outFileDlg.setDialogTitle("Enregistrer");
+				outFileDlg.setApproveButtonText("Enregistrer");
+				int returnVal = outFileDlg.showOpenDialog(MenuBar.this.parent);
+				
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					try {
+						String browseDir = new String(outFileDlg.getSelectedFile().toString());
+						File fstream = new File(browseDir);
+						FileOperation fop = new FileOperation(MenuBar.this.parent, MenuBar.this.parent.getPanelMainDrawActif());
+						fop.exportShape(browseDir, fstream);
+					} catch (IOException e1) {
+						Debug.printDebug("Erreur de fichier ou de repertoire pour l'export Shape");
+					} catch (SchemaException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+		
+		/** item quitter du menu fichier */
+		this.mQuit.addActionListener(new ActionListener() {
+		/** Declenche a l'appui de Quitter */
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+				Debug.printDebug("Goodbye !");
+			}
+		});
+		
+		this.mOD.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Tous les plus courts chemins");
+				APSP allShortestPath = new APSP(MenuBar.this.parent.panelActif.carte);
+				allShortestPath.thread.start();
+			}
+		});
+		
+		this.mIdentifyKPCC.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Identification de chemins de memes longueurs sur le reseau");
+				FindKShortestPath trouveKPCC = new FindKShortestPath(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				trouveKPCC.thread.start();
+			}
+		});
+		
+		this.mReseauReference.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de reseau de Delaunay");
+				TriangulationDelaunay2 trDelaunay = new TriangulationDelaunay2(MenuBar.this.parent.getPanelMainDrawActif().carte.getGraphe());
+				trDelaunay.run();
+				MenuBar.this.parent.getPanelMainDrawActif().carte.setGrapheDeReference(trDelaunay.getGrapheDelaunay());
+				MenuBar.this.parent.getPanelMainDrawActif().carte.getGrapheDeReference().setGrapheChange();
+				MenuBar.this.parent.getPanelMainDrawActif().carte.getVueDuGrapheDeReference().setNoeudsGraphiques(MenuBar.this.parent.getPanelMainDrawActif().carte.getGrapheDeReference());
+				MenuBar.this.parent.getPanelMainDrawActif().carte.getVueDuGrapheDeReference().setArcsGraphiques(MenuBar.this.parent.getPanelMainDrawActif().carte.getGrapheDeReference());
+			}
+		});
+		
+		this.mVoronoi.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul des surfaces de Voronoi");
+				RegionsDeVoronoi surfVoronoi = new RegionsDeVoronoi(MenuBar.this.parent.getPanelMainDrawActif().carte.getGraphe());
+				surfVoronoi.run();
+				surfVoronoi.pondereNoeudAleaRegion();
+				MenuBar.this.parent.panelActif.carte.setPolygonesDeVoronoi(surfVoronoi.getRegionsDeVoronoi());
+			}
+		});
+		
+		this.mCalcCentralityDegree.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de la centralite");
+				CentraliteDeDegre indCentraliteDeDegre = new CentraliteDeDegre(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				indCentraliteDeDegre.thread.start();
+			}
+		});
+		
+		this.mCalcCentralityPouvoir.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de la centralite");
+				CentraliteDePouvoir indCentraliteDePouvoir = new CentraliteDePouvoir(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				indCentraliteDePouvoir.thread.start();
+			}
+		});
+		
+		this.mCalcClosenessCentrality.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				CentraliteProximite indCentraliteDeProximite = new CentraliteProximite(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				indCentraliteDeProximite.thread.start();
+			}
+		});
+		
+		this.mCalcBetweenessCentrality.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de la centralite");
+				CentraliteIntermediaire2 indCentraliteIntermediaire = new CentraliteIntermediaire2(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				indCentraliteIntermediaire.thread.start();
+				// MenuBar.this.parent.panelActif.carte.setValeurs(indCentraliteIntermediaire.getValeurs());
+			}
+		});
+		
+		this.mCalcAccessibilityShimbel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de l'accessibilite de Shimbel");	
+			}
+		});
+		
+		this.mCalcEloignementMoyen.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de l'eloignement moyen");
+				EloignementMoyen eloignementMoyen = new EloignementMoyen(MenuBar.this.parent.getPanelMainDrawActif().carte, Constantes.typePCC);
+				eloignementMoyen.thread.start();
+			}
+		});
+		
+		this.mCalcEloignementMin.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de l'eloignement minimum");
+				EloignementMin eloignementMin = new EloignementMin(MenuBar.this.parent.getPanelMainDrawActif().carte, Constantes.typePCC);
+				eloignementMin.thread.start();
+			}
+		});
+		
+		this.mCalcEloignementMax.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de l'eloignement maximum");
+				EloignementMax eloignementMax = new EloignementMax(MenuBar.this.parent.getPanelMainDrawActif().carte, Constantes.typePCC);
+				eloignementMax.thread.start();
+			}
+		});
+		
+		this.mCalcCircuite.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de la circuite");
+				Circuite circuite = new Circuite(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				circuite.thread.start();
+			}
+		});
+		
+		this.mCalcEmpan.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul de l'empan");
+				Empan empan = new Empan(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				empan.thread.start();
+			}
+		});
+		
+		this.mCalcRayonDistal.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul du rayon distal");
+				RayonDistal rayonDistal = new RayonDistal(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				rayonDistal.thread.start();
+			}
+		});
+		
+		this.mCalcRayonProximal.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul du rayon proximal");
+				RayonProximal rayonProximal = new RayonProximal(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				rayonProximal.thread.start();
+			}
+		});
+		
+		this.mCalcKPCCSuperpose.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul des kPCC Superpose");
+				KPCCSuperposes kPCCsuperpose = new KPCCSuperposes(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				kPCCsuperpose.thread.start();
+			}
+		});
+		
+		this.mCalcFluxPCC.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul d'un flux de PCC");
+				ParallelKPCCSuperposes fluxPCC= new ParallelKPCCSuperposes(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				fluxPCC.thread.start();
+			}
+		});
+		
+		this.mCalcKClosestFirstTree.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul des k Closest First Tree");
+				KClosestFirstTree kCFTree = new KClosestFirstTree(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				kCFTree.thread.start();
+			}
+		});
+		
+		this.mCalcTriangles.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Calcul des Triangles");
+				Triangles trianglesDuReseau = new Triangles(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				trianglesDuReseau.thread.start();
+			}
+		});
+		
+		this.mCalcCheminEulerien.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Test Graphe Eulerien");
+				new CheminEulerien(MenuBar.this.parent.getPanelMainDrawActif());
+			}
+		});
+		
+		this.mCalcCheminHamiltonien.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Test Graphe Hamiltonien");
+				new CheminHamiltonien(MenuBar.this.parent.getPanelMainDrawActif());
+			}
+		});
+		
+		this.mArbreCouvrantPoidsMinimum.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ArbreCouvrantPoidsMinimum arbreKruskal = new ArbreCouvrantPoidsMinimum(MenuBar.this.parent.getPanelMainDrawActif().carte);
+				arbreKruskal.thread.start();
+			}
+		});
+		
+		this.mArbreCouvrantDesPCC.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int nbElementsSelectionnes = MenuBar.this.parent.getPanelMainDrawActif().listOfSelectedObjects.size();
+				
+				if (nbElementsSelectionnes == 1) {
+					
+					NoeudGraphique noeudSel = null;
+					
+					for (ObjetGraphique objGraphique : MenuBar.this.parent.getPanelMainDrawActif().listOfSelectedObjects) {
+						if (objGraphique.getType() == ConstantesApplication.typeVertex)
+							noeudSel = (NoeudGraphique) objGraphique;
+					}
+					if (noeudSel != null) {
+						ArbreCouvrantDesPCC arbrePCC = new ArbreCouvrantDesPCC(MenuBar.this.parent.getPanelMainDrawActif().carte, noeudSel.getNoeudTopologique());
+						arbrePCC.thread.start();
+					}
+				} else {
+					JOptionPane.showMessageDialog(MenuBar.this.parent, "Il faut selectionner au moins un noeud");
+					return;
+				}
+			}
+		});
+		
+		this.mRenameVertices.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Eviter les noms de noeuds en doublons");
+				int cpt = 1;
+				for (Noeud iterNoeud : MenuBar.this.parent.panelActif.carte.getGraphe().getNoeuds()) {
+					iterNoeud.setNom("V" + cpt++);
+					System.out.println("Nom " + iterNoeud.getNom() + " - " + iterNoeud.getNoeudGraphique().getNom());
+				}
+				System.out.println("Renomage de " + cpt + " noeuds");
+			}
+		});
+		
+		this.mAutoNameArc.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				for (Arc iterArc : MenuBar.this.parent.panelActif.carte.getGraphe().getArcs()) {
+					String nomNoeudA = iterArc.getSource().getNom();
+					String nomNoeudB = iterArc.getTarget().getNom();
+					iterArc.setNom(nomNoeudA + " - " + nomNoeudB);
+				}
+				MenuBar.this.parent.panelActif.carte.getGraphe().setGrapheChange();
+			}
+		});
+		
+		this.mAutoPondereArcs.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				for (Arc iterArc : MenuBar.this.parent.panelActif.carte.getGraphe().getArcs()) {
+					double longueurTroncon = Math.sqrt(Math.pow(Math.abs(iterArc.getPointSource().y - iterArc.getPointCible().y), 2.0) + Math.pow(Math.abs(iterArc.getPointSource().x - iterArc.getPointCible().x), 2.0));
+					
+					double echelle = 25.0;
+					longueurTroncon = longueurTroncon * echelle;
+					longueurTroncon /= 33;
+					
+					// Ponderation si rocade
+					// if (iterArc.getArcGraphique().getColor().getRGB() == new
+					// Color(153, 0, 0).getRGB()) {
+					// longueurTroncon = longueurTroncon / 38;
+					// }
+					// if (iterArc.getArcGraphique().getColor().getRGB() == new
+					// Color(204, 102, 0).getRGB()) {
+					// longueurTroncon = longueurTroncon / 26;
+					// } else {
+					// longueurTroncon = longueurTroncon / 16;
+					// }
+					
+					//					
+					// if(
+					// iterArc.getArcGraphique().getNom().compareTo("St-Lazare-Madeleine")
+					// == 0)
+					// System.out.println("break");
+					
+					longueurTroncon *= 100;
+					int intLongueurTroncon = (int) longueurTroncon;
+					double doubleLongueurTroncon = intLongueurTroncon;
+					longueurTroncon = new Double(doubleLongueurTroncon / 100).doubleValue();
+					
+					if (longueurTroncon == 1.0)
+						System.out.println("break");
+					
+					// MenuBar.this.parent.panelActif.carte.getGraphe().setPoidsArc(iterArc,
+					// longueurTroncon);
+					iterArc.setPoidsDistance(longueurTroncon);
+					iterArc.setIndicateurValeur(MenuBar.this.parent.panelActif.carte.getNomIndicateurCourant(), longueurTroncon);
+					MenuBar.this.parent.panelActif.carte.getGraphe().setPoidsArc(iterArc, longueurTroncon);
+					System.out.println(iterArc.getArcGraphique().getNom() + " , poids :" + iterArc.getArcGraphique().getArcTopologique().getPoids());
+					System.out.println(iterArc.getArcGraphique().getNom() + " , poids distance :" + iterArc.getArcGraphique().getArcTopologique().getPoidsDistance());
+					
+				}
+				MenuBar.this.parent.panelActif.carte.getGraphe().setGrapheChange();
+			}
+			
+		});
+		
+		this.mInversePoids.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				for (Arc iterArc : MenuBar.this.parent.panelActif.carte.getGraphe().getArcs()) {
+					double poids = iterArc.getPoids();
+					MenuBar.this.parent.panelActif.carte.getGraphe().setPoidsArc(iterArc, 1 / poids);
+				}
+				MenuBar.this.parent.panelActif.carte.getGraphe().setGrapheChange();
+			}
+			
+		});
+		
+		this.mDeleteVerticesZeroDegree.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				for (Noeud iterNoeud : MenuBar.this.parent.panelActif.carte.getGraphe().getNoeuds()) {
+					if (Graphs.neighborListOf(MenuBar.this.parent.panelActif.carte.getGraphe(), iterNoeud).size() == 0) {
+						// MenuBar.this.parent.panelActif.carte.getGraphe().delNoeud(iterNoeud);
+						System.out.println("Suppression de " + iterNoeud.getNom());
+					}
+				}
+			}
+		});
+		
+		this.mIdentifyCompConnex.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ConnectivityInspector<Noeud, Arc> testDeConnexite = new ConnectivityInspector<Noeud, Arc>(MenuBar.this.parent.panelActif.carte.getGraphe());
+				Double nbrCompConnex = new Double(testDeConnexite.connectedSets().size());
+				
+				System.out.println("Nb composantes connexes : " + nbrCompConnex);
+				int i = 1;
+				int indiceNbNoeudsMax = 0, max = -1;
+				
+				for (Set<Noeud> setNoeud : testDeConnexite.connectedSets()) {
+					
+					Random alea = new java.util.Random(System.currentTimeMillis());
+					Color c = new Color(Math.abs(alea.nextInt()) % 256, Math.abs(alea.nextInt()) % 256, Math.abs(alea.nextInt()) % 256);
+					
+					System.out.println(setNoeud.toString());
+					
+					for (Noeud noeud : setNoeud) {
+						noeud.getNoeudGraphique().setColor(c);
+					}
+					
+					int size = setNoeud.size();
+					
+					if (size > max) {
+						max = size;
+						indiceNbNoeudsMax = i;
+					}
+					
+					System.out.println("Nombre de noeuds pour la composante n°" + i++ + " : " + setNoeud.size());
+					
+				}
+				
+				i = 1;
+				for (Set<Noeud> setNoeud : testDeConnexite.connectedSets()) {
+					
+					if (i != indiceNbNoeudsMax) {
+						for (Noeud noeud : setNoeud) {
+							MenuBar.this.parent.panelActif.carte.getVueDuGraphe().removeNoeudGraphique(noeud.getNom());
+							MenuBar.this.parent.panelActif.carte.getGraphe().delNoeud(noeud);
+						}
+					}
+					i++;
+					MenuBar.this.parent.panelActif.carte.getGraphe().setGrapheChange();
+					MenuBar.this.parent.panelActif.carte.repaint();
+				}
+				
+			}
+			
+		});
+		
+		this.mCalcNordSud.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+				Set<NoeudGraphique> mesNoeuds = MenuBar.this.parent.panelActif.carte.getVueDuGraphe().getNoeudsGraphiques();
+				
+				Barycentre pointBarycentre = new Barycentre(mesNoeuds);
+				
+				Point[] pointDimensionVue = MenuBar.this.parent.panelActif.carte.getVueDuGraphe().getDimensionVue();
+				
+				MenuBar.this.parent.panelActif.lignePartageEstOuestVertical = new Line2D.Double(pointBarycentre.getBarycentre().getX(), pointDimensionVue[0].getY(), pointBarycentre.getBarycentre().getX(), pointDimensionVue[1].getY());
+				MenuBar.this.parent.panelActif.lignePartageNordSudHorizontal = new Line2D.Double(pointDimensionVue[0].getX(), pointBarycentre.getBarycentre().getY(), pointDimensionVue[1].getX(), pointBarycentre.getBarycentre().getY());
+				
+			}
+		});
+		
+		this.mFreeMemory.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.gc();
+			}
+		});
+		
+		this.mConfig.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e) {
+				ConfigLegende configLegende = new ConfigLegende(MenuBar.this.parent);
+				configLegende.setVisible(true);
+			}
+			
+		});
+		
+		this.mWindowAlgo.setEnabled(true);
+		this.mWindowAlgo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Fenetre Algorithme");
+			}
+		});
+		this.mWindow.add(this.mWindowAlgo);
+		
+		this.mWindowLayer.setEnabled(true);
+		this.mWindowLayer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Fenetre Couches");
+			}
+		});
+		this.mWindow.add(this.mWindowLayer);
+		
+		this.mWindowNodes.setEnabled(true);
+		this.mWindowNodes.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Fenetre Noeuds");
+			}
+		});
+		this.mWindow.add(this.mWindowNodes);
+		
+		this.mWindowEdges.setEnabled(true);
+		this.mWindowEdges.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Debug.printDebug("Fenetre Aretes");
+			}
+		});
+		this.mWindow.add(this.mWindowEdges);		
+		
+		this.mWindowBulles.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				MenuBar.this.parent.frontend.getController().setTheme( new NoStackTheme( new BubbleTheme() ) );
+			}
+		});
+		
+		this.mWindowEclipse.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MenuBar.this.parent.frontend.getController().setTheme( new EclipseTheme() );
+			}
+		});
+	}
+}

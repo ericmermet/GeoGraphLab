@@ -1,0 +1,51 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.factories;
+
+import fr.ign.cogit.geographlab.cheminements.OD;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+
+import java.util.HashMap;
+
+
+public class GestionnaireODs {
+	
+	public static int nbODs = 0;
+	public static HashMap<Integer, OD> idsODs = new HashMap<Integer, OD>();
+	
+//	public static int getID(OD od) {
+//		// nbODs++;
+//		// Integer i = new Integer(od.getOrigine().getID()*100000 +
+//		// od.getDestination().getID());
+//		// idsODs.put(i, od);
+//		// return i.intValue();
+//		
+//		int i = 0;
+//		int j = 0;
+//		
+//		if (od.getOrigine().getID() > od.getDestination().getID()) { // i<j
+//			i = od.getOrigine().getID();
+//			j = od.getDestination().getID();
+//		} else { // j<i
+//			j = od.getDestination().getID();
+//			i = od.getOrigine().getID();
+//		}
+//		
+//		int id = i * (i + 1) / 2 + j;
+//		idsODs.put(new Integer(id), od);
+//		
+//		return id;
+//		
+//	}
+	
+	public static int getIDUnique(OD od, Noeud o, Noeud d) {		
+		
+		return nbODs++;
+	}
+	
+}

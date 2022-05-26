@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gglVersion>0.2.4-SNAPSHOT</gglVersion>
+
+<project-decision-support>
+
+	<constraints>
+
+		<constraint>
+			<name>ConstraintName1</name>
+			<attribute-name>ConstraintAttributeName1</attribute-name>
+			<theme>Theme(Eco, School, etc.)</theme>
+			<other-fields>Do we need other fields ???</other-fields>
+			<other-fields1>Do we need other fields ???</other-fields1>
+			<other-fields2>Do we need other fields ???</other-fields2>
+		<constraint>
+
+		<constraint>
+			<name>ConstraintName2</name>
+			<attribute-name>ConstraintAttributeName2</attribute-name>
+			<theme>Theme(Eco, School, etc.)</theme>
+			<other-fields>Do we need other fields ???</other-fields>
+			<other-fields1>Do we need other fields ???</other-fields1>
+			<other-fields2>Do we need other fields ???</other-fields2>
+		<constraint>
+
+		<constraint>
+			Add new constraint here with the same schema
+		<constraint>
+
+	</constraints>
+
+	<operations>
+
+		<operation>
+			<result>OperationResult1</result>
+			<theme>Theme(Eco, School, etc.)</theme>
+			<operand-1>ConstraintName1</operande-1>
+			<operand-2>ConstraintName2</operande-2>
+			<other-fields>Do we need other fields ???</other-fields>
+		</operation>
+
+		<operation>
+			<result>OperationResult2</result>
+			<theme>Theme(Eco, School, etc.)</theme>
+			<operand-1>ConstraintName1</operande-1>
+			<operand-2>ConstraintName3</operande-2>
+			<operand-3>Etc</operande-3>
+			<operand-4>Etc</operande-4>
+			<other-fields>Do we need other fields ???</other-fields>
+		</operation>
+
+		<operation>
+			Add new operation here with the same schema
+		</operation>
+
+	</operations>
+
+</project-decision-support>

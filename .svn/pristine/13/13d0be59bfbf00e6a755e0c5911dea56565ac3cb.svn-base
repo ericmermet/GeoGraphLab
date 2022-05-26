@@ -1,0 +1,90 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * HierarchicalAnalysis.java in fr.irstea.adret.geographlab.plugins.ihm.exploration
+ * 
+ */
+package fr.irstea.adret.geographlab.plugins.ihm.exploration;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.ihm.PanelMainDraw;
+import fr.irstea.adret.geographlab.plugins.modele.Indicator;
+import fr.irstea.adret.geographlab.plugins.modele.Operation;
+
+/**
+ * @author eric
+ *
+ */
+public class HierarchicalAnalysis {
+	
+	PanelMainDraw mainActivePanel;
+	ArrayList<Indicator> listIndicators;
+	ArrayList<Operation> listOperations;
+	HashSet<String> listThemes = new HashSet<String>();
+	
+	public HierarchicalAnalysis(PanelMainDraw pmd, ArrayList<Indicator> listIndicators, ArrayList<Operation> listOperations) {
+		this.mainActivePanel = pmd;
+		this.listIndicators = listIndicators;
+		this.listOperations = listOperations;
+		
+		//Retrieve all themes
+		for (Indicator indicator : listIndicators) {
+			this.listThemes.add(indicator.getTheme());
+		}	
+		
+	}
+	
+	public void createIndicators(List<String> mapsNames) {
+		
+		//Creation d'un nombre de cartes en consequence -1 (une carte est deja creee par defaut)
+		//Mais d'abord on enleve les cartes parentes du gestionnaire de couches
+		this.mainActivePanel.couchesDeCartes.retirerToutesLesChouchesParentes();
+		
+		for (String theme : this.listThemes) {
+			for (Indicator indicator: this.listIndicators) {
+				
+				//If same theme
+				if( indicator.getTheme().compareTo(theme) == 0) {
+					
+					//Add map if same name as indicator
+					for (String mapName : mapsNames) {
+						if( indicator.getAttribute_name().compareTo(mapName) == 0) {
+							Carte carteTemp = new Carte(this.mainActivePanel);
+							carteTemp.setNom(mapName);
+							carteTemp.setNomIndicateurCourant(carteTemp.getNom());
+							
+							//Add here code to highlight theme
+							//TODO
+						}
+					}
+				}
+				
+			}
+		}
+		
+		//		for (int i = 0; i < mapsNames.size(); i++) {
+		//			Carte carteTemp = new Carte(this.mainActivePanel);
+		//			carteTemp.setNom(mapsNames.get(i));
+		//			carteTemp.setNomIndicateurCourant(carteTemp.getNom());
+		//			//L'ajout de cartes dans le gestionnaire est implicite et est effectue a la creation de la carte
+		//			//				this.parent.couchesDeCartes.ajouterUneCoucheCarte(carteTemp);
+		//		}
+		
+	}
+	
+	public void createOperations(ArrayList<Operation> listOperations) {
+		
+//		//Retrieve all themes
+//		ArrayList<String> listThemes = new ArrayList<String>();
+//		for (Operation operation : listOperations) {
+//			listThemes.add(operation.getTheme());
+//		}	
+	}
+	
+	
+}

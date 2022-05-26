@@ -1,0 +1,278 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>GeoGraphLab</groupId>
+	<artifactId>GeoGraphLab</artifactId>
+	<version>0.4-SNAPSHOT</version>
+	<name>GeoGraphLab</name>
+	<properties>
+		<package-name>geographlab.cogit.ign.fr</package-name>
+		<package-version>0.3.1</package-version>
+		<geotools.version>9-SNAPSHOT</geotools.version>
+	</properties>
+
+	<repositories>
+
+		<repository>
+			<id>n52-releases</id>
+			<name>52n Releases</name>
+			<url>http://52north.org/maven/repo/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<repository>
+			<id>opengeo</id>
+			<name>OpenGeo Maven Repository</name>
+			<url>http://repo.opengeo.org</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<repository>
+			<id>maven2-repository.dev.java.net</id>
+			<name>Java.net repository</name>
+			<url>http://download.java.net/maven/2</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<repository>
+			<id>GeoSolutions</id>
+			<name>geo-solutions repository</name>
+			<url>http://maven.geo-solutions.it</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<repository>
+			<id>eaio.com</id>
+			<url>http://eaio.com/maven2</url>
+		</repository>
+
+		<repository>
+			<id>mvnrepository</id>
+			<url>http://mvnrepository.com/artifact</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<repository>
+			<id>ProjectRepo</id>
+			<name>ProjectRepo</name>
+			<url>file://${project.basedir}/lib</url>
+		</repository>
+
+		<!-- <repository> <id>osgeo</id> <name>Open Source Geospatial Foundation 
+			Repository</name> <url>http://download.osgeo.org/webdav/geotools</url> <snapshots> 
+			<enabled>true</enabled> <updatePolicy>daily</updatePolicy> </snapshots> </repository> 
+			<repository> <id>maven-repo1</id> <url>http://repo1.maven.org/maven2</url> 
+			<snapshots> <enabled>true</enabled> <updatePolicy>daily</updatePolicy> </snapshots> 
+			</repository> <repository> <id>repository-jboss</id> <url>http://repository.jboss.org/maven2</url> 
+			<snapshots> <enabled>true</enabled> <updatePolicy>daily</updatePolicy> </snapshots> 
+			</repository> <repository> <id>ftp-us-xemacs</id> <url>http://ftp.us.xemacs.org/pub/mirrors/maven2</url> 
+			<snapshots> <enabled>true</enabled> <updatePolicy>daily</updatePolicy> </snapshots> 
+			</repository> <repository> <id>ibiblio</id> <name>ibiblio</name> <url>http://mirrors.ibiblio.org/pub/mirrors/maven2</url> 
+			</repository> <repository> <id>projectlombok.org</id> <url>http://projectlombok.org/mavenrepo</url> 
+			</repository> -->
+
+	</repositories>
+
+	<build>
+
+		<sourceDirectory>src</sourceDirectory>
+		<resources>
+			<resource>
+				<directory>src</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</resource>
+			<resource>
+				<directory>img</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.0</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<appendAssemblyId>false</appendAssemblyId>
+					<finalName>${project.artifactId}-${project.version}</finalName>
+					<outputDirectory>${basedir}/release</outputDirectory>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<archive>
+						<manifest>
+							<mainClass>fr.ign.cogit.geographlab.GeoGraphLab</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>package-jar-with-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	<organization>
+		<name>Graph-it</name>
+	</organization>
+	<dependencies>
+		<dependency>
+			<groupId>org.jgrapht</groupId>
+			<artifactId>jgrapht-core</artifactId>
+			<version>0.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jgrapht</groupId>
+			<artifactId>jgrapht-ext</artifactId>
+			<version>0.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>gov.nist.math</groupId>
+			<artifactId>jama</artifactId>
+			<version>1.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.vividsolutions</groupId>
+			<artifactId>jts</artifactId>
+			<version>1.13</version>
+		</dependency>
+		<dependency>
+			<groupId>jexcelapi</groupId>
+			<artifactId>jxl</artifactId>
+			<version>2.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.dockingframes</groupId>
+			<artifactId>docking-frames-common</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.dockingframes</groupId>
+			<artifactId>docking-frames-core</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-main</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-shapefile</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-opengis</artifactId> <!-- geoapi -->
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-swing</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-epsg-hsql</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-epsg-extension</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-epsg-wkt</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-jdbc</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools.xsd</groupId>
+			<artifactId>gt-xsd-core</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools.xsd</groupId>
+			<artifactId>gt-xsd-kml</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-svggen</artifactId>
+			<version>1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-dom</artifactId>
+			<version>1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.6.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-render</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.graph-it</groupId>
+			<artifactId>gt-brewer</artifactId>
+			<version>2.5.3</version>
+		</dependency>
+		<dependency>
+			<groupId>io.graph-it</groupId>
+			<artifactId>jmatharray</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>io.graph-it</groupId>
+			<artifactId>mesh</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>io.graph-it</groupId>
+			<artifactId>quickhull3d</artifactId>
+			<version>1.4</version>
+		</dependency>
+	</dependencies>
+</project>

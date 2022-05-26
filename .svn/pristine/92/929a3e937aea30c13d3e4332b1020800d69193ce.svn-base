@@ -1,0 +1,21 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.utils;
+
+public class Utils {
+	
+	public static int findMin(Object... var) {
+		
+		for (Object object : var) {
+			
+		}
+		
+		return 0;
+	}
+	
+}

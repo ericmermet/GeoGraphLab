@@ -1,0 +1,321 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.ihm.bars;
+
+
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashSet;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JSeparator;
+import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
+
+import fr.ign.cogit.geographlab.algo.DetectionImpasses;
+import fr.ign.cogit.geographlab.algo.DetectionRondsPoints;
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.OutilsSelections;
+import fr.ign.cogit.geographlab.ihm.PanelMainDraw;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesImages;
+
+
+// import algo.Task;
+
+public class ToolBar extends JToolBar {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	MainWindow parent;
+	
+	private HashSet<JButton> listButtonMenuBar = new HashSet<JButton>();
+	JButton bSelect = new JButton();
+	JButton bMoveNode = new JButton();
+	JButton bSelectMore = new JButton();
+	JButton bZoomIn = new JButton();
+	JButton bZoomOut = new JButton();
+	JButton bDrag = new JButton();
+	JButton bResize = new JButton();
+	JButton bDrawNodes;
+	JButton bDrawZones;
+	JButton bDrawEdges;
+	JButton bAddLayer;
+	
+	JButton bAddMapLayer;
+	
+	JButton bSelectImpasses;
+	JButton bSelectRondPoint;
+	
+	public ToolBar(MainWindow parent) {
+		super();
+		this.parent = parent;
+		initialize();
+	}
+	
+	private void initialize() {
+		
+		System.out.println(System.getProperties().get("user.dir"));
+		
+		Icon imgSelect = new ImageIcon(getClass().getResource(ConstantesImages.imgSelect));
+		Icon imgSelectSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgSelectSelected));
+		Icon imgMoveNode = new ImageIcon(getClass().getResource(ConstantesImages.imgMoveNode));
+		Icon imgMoveNodeSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgMoveNodeSelected));
+		Icon imgSelectMore = new ImageIcon(getClass().getResource(ConstantesImages.imgSelectMore));
+		Icon imgZoomIn = new ImageIcon(getClass().getResource(ConstantesImages.imgZoomIn));
+		Icon imgZoomInSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgZoomInSelected));
+		Icon imgZoomOut = new ImageIcon(getClass().getResource(ConstantesImages.imgZoomOut));
+		Icon imgZoomOutSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgZoomOutSelected));
+		Icon imgDrag = new ImageIcon(getClass().getResource(ConstantesImages.imgDrag));
+		Icon imgDragSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgDragSelected));
+		Icon imgResize = new ImageIcon(getClass().getResource(ConstantesImages.imgResize));
+		
+		JSeparator sep1 = new JSeparator(SwingConstants.VERTICAL);
+		Icon imgDrawNode = new ImageIcon(getClass().getResource(ConstantesImages.imgDrawNode));
+		Icon imgDrawNodeSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgDrawNodeSelected));
+		Icon imgDrawZone = new ImageIcon(getClass().getResource(ConstantesImages.imgDrawZone));
+		Icon imgDrawZoneSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgDrawZoneSelected));
+		Icon imgDrawEdge = new ImageIcon(getClass().getResource(ConstantesImages.imgDrawEdge));
+		Icon imgDrawEdgeSelected = new ImageIcon(getClass().getResource(ConstantesImages.imgDrawEdgeSelected));
+		
+		JSeparator sep2 = new JSeparator(SwingConstants.VERTICAL);
+		Icon imgDeadEndStreet = new ImageIcon(getClass().getResource(ConstantesImages.imgDeadEndStreet));
+		Icon imgCycle = new ImageIcon(getClass().getResource(ConstantesImages.imgCycle));
+		
+		JSeparator sep3 = new JSeparator(SwingConstants.VERTICAL);
+		Icon imgLayer = new ImageIcon(getClass().getResource(ConstantesImages.imgLayer));
+		
+		JSeparator sep4 = new JSeparator(SwingConstants.VERTICAL);
+		Icon imgAddMapLayer = new ImageIcon("");
+		
+		this.bSelect = new JButton(imgSelect);
+		this.bSelect.setSelectedIcon(imgSelectSelected);
+		this.listButtonMenuBar.add(this.bSelect);
+		this.bMoveNode = new JButton(imgMoveNode);
+		this.bMoveNode.setSelectedIcon(imgMoveNodeSelected);
+		this.listButtonMenuBar.add(this.bMoveNode);
+		this.bSelectMore = new JButton(imgSelectMore);
+		this.bSelectMore.setSelectedIcon(imgSelectSelected);
+		this.listButtonMenuBar.add(this.bSelectMore);
+		this.bZoomIn = new JButton(imgZoomIn);
+		this.bZoomIn.setSelectedIcon(imgZoomInSelected);
+		this.listButtonMenuBar.add(this.bZoomIn);
+		this.bZoomOut = new JButton(imgZoomOut);
+		this.bZoomOut.setSelectedIcon(imgZoomOutSelected);
+		this.listButtonMenuBar.add(this.bZoomOut);
+		this.bDrag = new JButton(imgDrag);
+		this.bDrag.setSelectedIcon(imgDragSelected);
+		this.listButtonMenuBar.add(this.bDrag);
+		this.bResize = new JButton(imgResize);
+		this.listButtonMenuBar.add(this.bResize);
+		this.bDrawNodes = new JButton(imgDrawNode);
+		this.bDrawNodes.setSelectedIcon(imgDrawNodeSelected);
+		this.listButtonMenuBar.add(this.bDrawNodes);
+		this.bDrawZones = new JButton(imgDrawZone);
+		this.bDrawZones.setSelectedIcon(imgDrawZoneSelected);
+		this.listButtonMenuBar.add(this.bDrawZones);
+		this.bDrawEdges = new JButton(imgDrawEdge);
+		this.bDrawEdges.setSelectedIcon(imgDrawEdgeSelected);
+		this.listButtonMenuBar.add(this.bDrawEdges);
+		
+		this.bAddLayer = new JButton(imgLayer);
+		
+		this.bSelectImpasses = new JButton(imgDeadEndStreet);
+		this.bSelectRondPoint = new JButton(imgCycle);
+		
+		this.bSelect.setSelected(true);
+		this.bMoveNode.setSelected(false);
+		this.bZoomIn.setSelected(false);
+		this.bZoomOut.setSelected(false);
+		this.bDrag.setSelected(false);
+		this.bResize.setSelected(false);
+		
+		this.bSelect.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bSelect);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.selectionMode);
+				ToolBar.this.parent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			}
+		});
+		
+		this.bMoveNode.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bMoveNode);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.moveNodeMode);
+				 ToolBar.this.parent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			}
+		});
+		
+		this.bSelectMore.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				OutilsSelections.selectMore(ToolBar.this.parent.getPanelMainDrawActif().carte);
+			}
+		});
+		
+		this.bZoomIn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bZoomIn);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.zoomInMode);
+				// ToolBar.this.parent.setCursor(Cursor.getPredefinedCursor(Cursor.));
+			}
+		});
+		
+		this.bZoomOut.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bZoomOut);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.zoomOutMode);
+			}
+		});
+		
+		this.bDrag.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bDrag);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.dragMode);
+				ToolBar.this.parent.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+			}
+		});
+		
+		this.bResize.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				ToolBar.this.parent.getPanelMainDrawActif().centreVue();
+				ToolBar.this.parent.getPanelMainDrawActif().repaint();
+			}
+		});
+		
+		this.bDrawNodes.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bDrawNodes);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.drawingNodesMode);
+				ToolBar.this.parent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			}
+		});
+		
+		this.bDrawZones.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bDrawZones);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.drawingZonesMode);
+				ToolBar.this.parent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				
+			}
+		});
+		
+		this.bDrawEdges.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				toggleButtonInMenuBar(ToolBar.this.bDrawEdges);
+				ToolBar.this.parent.getPanelMainDrawActif().setOutilsSelectionne(ConstantesApplication.drawingEdgesMode);
+				ToolBar.this.parent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			}
+		});
+		
+		this.bAddLayer.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				Carte nouvelleCartePourNouvelleCouche = new Carte(ToolBar.this.parent.panelActif.carte, ToolBar.this.parent.panelActif.carte.getNom(), "NouvelleCouche");
+				int R = (int) (255 * Math.random());
+				int V = (int) (255 * Math.random());
+				int B = (int) (255 * Math.random());
+				nouvelleCartePourNouvelleCouche.setColorLayer(new Color(R, V, B));
+				// ToolBar.this.parent.panelActif.couchesDeCartes.ajouterUneCoucheCarte(nouvelleCartePourNouvelleCouche);
+				ToolBar.this.parent.panelLayer.updateLayersFromLayerControler();
+			}
+			
+		});
+		
+		this.bSelectImpasses.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DetectionImpasses detectImpasse = new DetectionImpasses(ToolBar.this.parent.panelActif.carte);
+				// System.out.println(detectImpasse.detectionSimple());
+				detectImpasse.detectionComposantesConnexes();
+				ToolBar.this.parent.repaint();
+			}
+		});
+		
+		this.bSelectRondPoint.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DetectionRondsPoints detectRondsPoints = new DetectionRondsPoints(ToolBar.this.parent.panelActif.carte);
+				// System.out.println(detectImpasse.detectionSimple());
+				detectRondsPoints.detecteCyclePourLeNoeud(ToolBar.this.parent.panelActif.carte.getGraphe().getNoeuds().iterator().next());
+				ToolBar.this.parent.repaint();
+			}
+		});
+		
+		add(this.bSelect);
+		add(this.bMoveNode);
+		add(this.bSelectMore);
+		add(this.bZoomIn);
+		add(this.bZoomOut);
+		add(this.bDrag);
+		add(this.bResize);
+		add(sep1);
+		add(this.bDrawNodes);
+//		add(this.bDrawZones);
+		add(this.bDrawEdges);
+		add(sep3);
+		add(this.bAddLayer);
+		add(sep2);
+		add(this.bSelectImpasses);
+//		add(this.bSelectRondPoint);
+		
+	}
+	
+	public void toggleButtonInMenuBar(JButton buttonToactivated) {
+		
+		for (JButton iterButtons : this.listButtonMenuBar) {
+			iterButtons.setSelected(false);
+		}
+		
+		buttonToactivated.setSelected(true);
+	}
+	
+	public void activateTheButtonForPanel(PanelMainDraw p) {
+		
+		JButton bSelectedForPanel = this.bSelect;
+		
+		switch (p.getOutilsSelectionne()) {
+			case ConstantesApplication.selectionMode:
+				bSelectedForPanel = this.bSelect;
+				break;
+			case ConstantesApplication.moveNodeMode:
+				bSelectedForPanel = this.bMoveNode;
+				break;
+			case ConstantesApplication.zoomInMode:
+				bSelectedForPanel = this.bZoomIn;
+				break;
+			case ConstantesApplication.zoomOutMode:
+				bSelectedForPanel = this.bZoomOut;
+				break;
+			case ConstantesApplication.dragMode:
+				bSelectedForPanel = this.bDrag;
+				break;
+			case ConstantesApplication.drawingNodesMode:
+				bSelectedForPanel = this.bDrawNodes;
+				break;
+			case ConstantesApplication.drawingEdgesMode:
+				bSelectedForPanel = this.bDrawEdges;
+				break;
+			case ConstantesApplication.drawingZonesMode:
+				bSelectedForPanel = this.bDrawZones;
+				break;
+			default:
+				bSelectedForPanel = this.bSelect;
+				break;
+		}
+		
+		toggleButtonInMenuBar(bSelectedForPanel);
+	}
+	
+}

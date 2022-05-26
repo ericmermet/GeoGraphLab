@@ -1,0 +1,296 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * FileOperationOpenShape.java in fr.ign.cogit.geographlab.fichier
+ * 
+ */
+package fr.ign.cogit.geographlab.fichier;
+
+import java.awt.Point;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+
+import org.geotools.data.FeatureSource;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.FeatureIterator;
+import org.geotools.metadata.iso.maintenance.MaintenanceInformationImpl;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeDescriptor;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.MultiLineString;
+
+import fr.ign.cogit.geographlab.algo.maths.Distances;
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.PanelMainDraw;
+import fr.ign.cogit.geographlab.visu.NoeudGraphique;
+
+/**
+ * @author eric
+ *
+ */
+public class FileOperationOpenShape extends Thread {
+	
+	private MainWindow mainWindow;
+	private PanelMainDraw parent;
+	private String file;
+	
+	/**
+	 * 
+	 */
+	public FileOperationOpenShape(MainWindow mainWindow, PanelMainDraw parent, String file ) {
+		
+		this.mainWindow = mainWindow;
+		this.parent = parent;
+		this.file = file;
+		
+	}
+	
+	@Override
+	public void run() {
+		
+		File fileToLoad = new File(this.file);
+		
+		Calendar c1 = Calendar.getInstance();
+		long debut = c1.getTimeInMillis();
+		SimpleFeature test = null;
+		
+		OpenProgressBar openBar = null;
+		
+		try {
+			
+			URL shapeURL = fileToLoad.toURI().toURL();
+			
+			// chargement du fichier shape
+			ShapefileDataStore store;
+			
+			store = new ShapefileDataStore(shapeURL);
+			
+			// nom du fichier sans l'extension
+			String nomFichier = store.getTypeNames()[0];
+			System.out.println(nomFichier);
+			
+			// recuperation des elements contenu dans le fichier
+			FeatureSource<SimpleFeatureType, SimpleFeature> source = store.getFeatureSource(nomFichier);
+			
+			// recuperation des elements de la source dans une collection
+			FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures();
+			
+			// affichage du nombre des objets
+			System.out.println(collection.size() + " objets dans le fichier shapefile " + nomFichier);
+			
+			// recuperation du schema - featuretype -
+			// FeatureType ft = source.getSchema();
+			
+			// liste des noms et types des attributs
+			List<AttributeDescriptor> descriptors = collection.getSchema().getAttributeDescriptors();
+			
+			//Recuperation des noms des champs et choix dans une interface
+			List<String> textField;
+			if( askTextField(descriptors) == false )
+				return;
+			
+			if( FileOperation.textFieldShapeAttribute.size() != 0)
+				textField = FileOperation.textFieldShapeAttribute;
+			else
+				return;
+			
+			//Creation d'un nombre de cartes en consequence -1 (une carte est deja creee par defaut)
+			//Mais d'abord on enleve les cartes parentes du gestionnaire de couches
+			this.parent.couchesDeCartes.retirerToutesLesChouchesParentes();
+			for (int i = 0; i < textField.size(); i++) {
+				Carte carteTemp = new Carte(this.parent);
+				carteTemp.setNom(textField.get(i));
+				carteTemp.setNomIndicateurCourant(carteTemp.getNom());
+				//L'ajout de cartes dans le gestionnaire est implicite et est effectue a la creation de la carte
+				//				this.parent.couchesDeCartes.ajouterUneCoucheCarte(carteTemp);
+			}
+			
+			// creation d'un iterateur sur la collection et affichage d'un des attributs
+			FeatureIterator<SimpleFeature> it = collection.features();
+			int i = 0;
+			
+			//			ArrayList<Point> coordNoeuds = new ArrayList<Point>();
+			//			ArrayList<Noeud> tabNoeuds = new ArrayList<Noeud>();
+			HashMap<Point, Noeud> setNoeudsCrees = new HashMap<Point, Noeud>();
+			
+			boolean flag3D = false;
+			
+			//Déclaration de la barre de progression d'ouverture
+			openBar = new OpenProgressBar(collection.size(), this.file);
+			
+			while (it.hasNext()) {
+				
+				try{
+					
+				SimpleFeature feature = it.next();
+				test = feature;
+				
+//				System.out.println(feature.toString());
+				// System.out.println(feature.getAttribute(descriptors.get(2).getLocalName()));
+				
+				//			String id = feature.getID();
+				
+				//			openBar.remoteBar(i, feature.toString());
+				openBar.remoteBar(++i, "Feature n°" + feature.getID().toString() );
+				
+				Geometry geom = (Geometry)feature.getDefaultGeometry();
+				
+				LineString line;
+				
+				if (geom instanceof MultiLineString) {
+					MultiLineString multiLine = (MultiLineString) feature.getDefaultGeometry();
+					line = (LineString) multiLine.getGeometryN(0);
+				} else if (geom instanceof LineString) {
+					line = (LineString) geom;
+				} else {
+					// TODO Add a logger
+					System.out.println("ATTENTION : Geometrie differente de LineString ou MultiLineString");
+					line = null;
+					return;
+				}
+				
+				Coordinate coordIni = line.getCoordinateN(0);
+				
+				if (coordIni.z != Double.NaN) {
+					flag3D = true;
+				}
+				
+				Coordinate coordFin = line.getCoordinateN(line.getCoordinates().length - 1);
+				//			System.out.println("Cordonnees " + i + " : " + coordIni.x + " " + coordIni.y + " , " + coordFin.x + " " + coordFin.y);
+				
+				Point pIni = new Point((int)coordIni.x, -(int)coordIni.y);
+				Point pFin = new Point((int)coordFin.x, -(int)coordFin.y);
+				
+				Noeud noeudDepartLu = null , noeudArriveLu = null;
+				//				NoeudGraphique noeudDepartLuGraphique, noeudArriveLuGraphique;
+				
+				if( setNoeudsCrees.containsKey(pIni) ) {
+					noeudDepartLu = setNoeudsCrees.get(pIni);
+					//				System.out.println("noeud départ retrouvé");
+				} else {
+					noeudDepartLu = new Noeud(pIni);
+					noeudDepartLu.setNoeudGraphique( new NoeudGraphique(noeudDepartLu) );
+					setNoeudsCrees.put(pIni, noeudDepartLu);
+				}
+				
+				if( setNoeudsCrees.containsKey(pFin) ) {
+					noeudArriveLu = setNoeudsCrees.get(pFin);
+					//				System.out.println("noeud arrivé retrouvé");
+				} else {
+					noeudArriveLu = new Noeud(pFin);
+					noeudArriveLu.setNoeudGraphique( new NoeudGraphique(noeudArriveLu) );
+					setNoeudsCrees.put(pFin, noeudArriveLu);
+				}
+				
+				Arc arcAajoute = new Arc(noeudDepartLu, noeudArriveLu);
+				arcAajoute.setNom(arcAajoute.getSource().getNom() + "-" + arcAajoute.getTarget().getNom());
+				//Ajout de la geometrie de l'arc sur l'objet arc graphique
+				arcAajoute.getArcGraphique().setGeom(geom);
+				
+				//On charge les donnees pour toutes les cartes parentes
+				for (Carte iterCarte: this.parent.couchesDeCartes.getCouches()) {
+					//Si elle est parente
+					if( iterCarte.isParent() ) {
+						
+						iterCarte.getGraphe().addNoeud(noeudDepartLu);
+						noeudDepartLu.setIndicateurValeur(iterCarte.getNom(), 0.0);
+						iterCarte.getVueDuGraphe().addNoeud(noeudDepartLu.getNoeudGraphique());
+						
+						iterCarte.getGraphe().addNoeud(noeudArriveLu);
+						noeudArriveLu.setIndicateurValeur(iterCarte.getNom(), 0.0);
+						iterCarte.getVueDuGraphe().addNoeud(noeudArriveLu.getNoeudGraphique());
+						
+						try {
+							
+							Double poids = 0.0;
+							if( iterCarte.getNom().compareTo("Dist_polylignes") == 0 ){
+								//Sinon distance auto le long de la courbe avec ou sans le z si dispo
+								if (flag3D) {
+									poids = Distances.length3D(line.getCoordinateSequence());
+								} else {
+									poids = line.getLength();
+								}
+							} else{
+								if( iterCarte.getNom().compareTo("Dist_euclidiennes") == 0 ) {
+									poids = Distances.lengthEuclidian(line.getCoordinateSequence());
+								}else{
+									try{
+										poids = (Double)feature.getAttribute(iterCarte.getNom());
+										
+									}catch (ClassCastException e) {
+										poids = new Double((Integer)feature.getAttribute(iterCarte.getNom()));
+									}
+								}
+							}
+							
+							iterCarte.getGraphe().addArcPondere(arcAajoute, new Double(poids));
+							
+							//C'est ici que l'on choisit la valeur de la couche en mode normal
+							arcAajoute.setPoidsDistance(poids.doubleValue());
+							arcAajoute.setPoidsTemps(poids.doubleValue());
+							
+							arcAajoute.setIndicateurValeur(iterCarte.getNom(), poids);
+							
+							//						System.out.println("Poids = "+ poids);
+							iterCarte.getVueDuGraphe().addArc(arcAajoute.getArcGraphique());
+							// this.parent.carte.getGraphe().getEdge(noeudDepartLu,
+							// noeudArriveLu).setNom(noeudDepartLu + );
+						} catch (Exception e) {
+							System.out.println("Erreur de lecture " + iterCarte.getNom());
+							iterCarte.getGraphe().addArcPondere(arcAajoute, 1.0);
+						}
+					}
+				}
+			} catch( IllegalStateException ise) {
+				ise.printStackTrace();
+				
+			}
+			}
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		catch( IllegalStateException ise) {
+			ise.printStackTrace();
+			System.out.println(test);
+		}
+		
+		openBar.dispose();
+		openBar.setVisible(false);
+		
+		Calendar c2 = Calendar.getInstance();
+		
+		long tempsExecution = c2.getTimeInMillis() - debut;
+		System.out.println("Temps de chargement du fichier Shape (ms):" + tempsExecution);
+		
+		for (Carte iterCarte: this.parent.couchesDeCartes.getCouches()) {
+			iterCarte.getGraphe().setGrapheChange();
+			System.out.println("nb Noeuds = " + iterCarte.getGraphe().getNombreNoeuds() + " nb arcs = " + iterCarte.getGraphe().getNombreArcs());
+		}
+		
+		this.parent.centreVue();
+		
+	}
+	
+	private boolean askTextField(List<AttributeDescriptor> descriptors) {
+		return fr.irstea.adret.geographlab.plugins.fichier.FileOperation.askTextField(this.mainWindow, descriptors);
+	}
+	
+}

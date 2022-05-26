@@ -1,0 +1,238 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.visu;
+
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.event.ArcEvent;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+
+import java.awt.BasicStroke;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Polygon;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.CoordinateSequence;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.MultiLineString;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.LineString;
+
+public class ArcGraphique extends ObjetGraphique {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	private Arc arcTopologique;
+	
+	private Point pSource;
+	private Point pCible;
+	
+	private Line2D.Double edgeShape;
+	
+	private LineString geomLine;
+	
+	private AffineTransform affineTransform;
+	
+//	 private MovingAdapter ma = new MovingAdapter();
+	
+//	private static ArcEvent event(Arc n, ArcGraphique ng) {
+//		ArcEvent evt = new ArcEvent(n, ng);
+//		
+////		 System.out.println("pouet");
+//		if (evt.selectionChange()) {
+////			 System.out.println("youpi");
+//		}
+//		return evt;
+//	}
+	
+	public ArcGraphique(Arc a) {
+		super(a.getNom(), ConstantesApplication.typeEdge);
+		setArcTopologique(a);
+//		a.addSelectionArcListener(ArcGraphique.event(a, this));
+//		a.addNomArcListener(ArcGraphique.event(a, this));
+		setPSource(a.getPointSource());
+		setPCible(a.getPointCible());
+		setColor(ConstantesApplication.unselectedColorEdge);
+		autoSetShape();
+		this.affineTransform = new AffineTransform();
+	}
+	
+	public void setArcTopologique(Arc arcTopologique) {
+		this.arcTopologique = arcTopologique;
+	}
+	
+	public Arc getArcTopologique() {
+		return this.arcTopologique;
+	}
+	
+	public void setPSource(Point pSource) {
+		this.pSource = pSource;
+	}
+	
+	public void changePSource(Point nouveauPointSource) {
+		setPSource(nouveauPointSource);
+		if( geomLine != null )
+			changePointExtremite(nouveauPointSource);
+	}
+	
+	public Point getPSource() {
+		return this.pSource;
+	}
+	
+	public void setPCible(Point pCible) {
+		this.pCible = pCible;
+	}
+	
+	public void changePCible(Point nouveauPointCible) {
+		setPSource(nouveauPointCible);
+		if( geomLine != null )
+			changePointExtremite(nouveauPointCible);
+	}
+	
+	
+	public Point getPCible() {
+		return this.pCible;
+	}
+	
+	public void autoSetShape() {
+		this.edgeShape = new Line2D.Double(
+				getArcTopologique().getSource().getPosition().getX() + ConstantesApplication.vertexRadius / 2,
+				getArcTopologique().getSource().getPosition().getY() + ConstantesApplication.vertexRadius / 2,
+				getArcTopologique().getTarget().getPosition().getX() + ConstantesApplication.vertexRadius / 2,
+				getArcTopologique().getTarget().getPosition().getY() + ConstantesApplication.vertexRadius / 2);
+	}
+	
+	public void changeShape(int nouveauRayon) {
+		
+		this.edgeShape.x1 = getArcTopologique().getSource().getPosition().getX() + ConstantesApplication.vertexRadius / 2;
+		this.edgeShape.y1 = getArcTopologique().getSource().getPosition().getY() + ConstantesApplication.vertexRadius / 2;
+		this.edgeShape.x2 = getArcTopologique().getTarget().getPosition().getX() + ConstantesApplication.vertexRadius / 2;
+		this.edgeShape.y2 = getArcTopologique().getTarget().getPosition().getY() + ConstantesApplication.vertexRadius / 2;
+		
+	}
+	
+	public Shape getShape() {
+		return this.edgeShape;
+	}
+	
+	public void changePointExtremite(Point p) {
+		
+		Coordinate[] coordinates = geomLine.getCoordinates();
+		
+		if( p.distance(geomLine.getStartPoint()) < p.distance(geomLine.getEndPoint()) ) {
+			//Le point start est le plus proche du nouveau point
+			coordinates[0] = p.getCoordinate();
+		}else{
+			//Le point end est le plus proche du nouveau point
+			coordinates[coordinates.length] = p.getCoordinate();
+		}
+		geomLine = new GeometryFactory().createLineString(coordinates);
+		
+	}
+	
+	public void setGeom(Geometry geom) {
+		
+		if (geom instanceof MultiLineString) {
+			MultiLineString geomMultiLine = (MultiLineString) geom;
+			this.geomLine = (LineString) geomMultiLine.getGeometryN(0);
+		} else if (geom instanceof LineString) {
+			this.geomLine = (LineString) geom;
+		} else {
+			// TODO Add a logger
+			System.out.println("ATTENTION : Geometrie differente de LineString ou MultiLineString");
+			this.geomLine = null;
+			return;
+		}
+		
+	}
+	
+	public Geometry getGeometry() {
+		return this.geomLine;
+	}
+	
+	public LineString getGeometryLineString() {
+		return this.geomLine;
+	}
+	
+	public void paintComponent(Graphics g, boolean nondirige, int geometrie, int vertexRadius, int edgeWidth) {
+		
+		if( geometrie == 0) {
+			
+			this.changeShape(vertexRadius);
+			
+			((Graphics2D) g).setStroke(new BasicStroke(edgeWidth, 
+					BasicStroke.CAP_BUTT,
+                    BasicStroke.JOIN_ROUND, 10.0f));
+			
+			((Graphics2D) g).draw(getShape());
+			
+			if( !nondirige ){
+				
+				Polygon triangle = new Polygon(new int[] {0,0,2*vertexRadius},new int[] {-vertexRadius,vertexRadius,0},3);
+				
+				double theta = Math.atan( (this.edgeShape.y2-this.edgeShape.y1) / (this.edgeShape.x2-this.edgeShape.x1) );
+				if( this.edgeShape.x2-this.edgeShape.x1 < 0)
+					theta -= Math.PI;
+				
+				this.affineTransform.setToRotation(theta);
+				Shape arrow = this.affineTransform.createTransformedShape(triangle);
+				this.affineTransform.setToTranslation(this.edgeShape.x2-3*vertexRadius*Math.cos(theta),this.edgeShape.y2-3*vertexRadius*Math.sin(theta));
+				
+				((Graphics2D) g).draw(this.affineTransform.createTransformedShape(arrow));
+				((Graphics2D) g).fill(this.affineTransform.createTransformedShape(arrow));
+				
+			}
+		}else if (geometrie == 1) {
+			
+//			System.out.println("Line " + this.arcTopologique.getNom());
+			paintLineString(g, this.getGeometryLineString().getCoordinateSequence(), edgeWidth);
+			
+		}
+	}
+	
+	public static void paintLineString(Graphics g, CoordinateSequence pts, int edgeWidth) {
+		// optimized for processing CoordinateSequences
+		int n = pts.size();
+		if (n <= 1) return;
+		
+		for (int i = 0 ; i < n - 1 ; i++) {
+			Coordinate c0 = pts.getCoordinate(i);
+			Coordinate c1 = pts.getCoordinate(i + 1);
+			
+			Line2D.Double tempLine = new Line2D.Double();
+			tempLine = new Line2D.Double(c0.x, -c0.y, c1.x, -c1.y);
+			((Graphics2D) g).setStroke(new BasicStroke(edgeWidth));//, 
+//					BasicStroke.CAP_ROUND,
+//                    BasicStroke.JOIN_ROUND, 10.0f));
+			((Graphics2D) g).draw(tempLine);
+			
+		}
+	}
+	
+//	@Override
+//	public void mouseClicked(MouseEvent e) {
+//		
+//		int x = e.getX();
+//		int y = e.getY();
+//		
+//		System.out.println("pass");
+//		
+//		if (getShape().getBounds2D().contains(x, y)) {
+//			ArcGraphique.this.setSelected(true);
+//			System.out.println("forme selectionne");
+//		}
+//	}
+	
+}

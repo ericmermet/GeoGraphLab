@@ -1,0 +1,13 @@
+MenuBar_Irstea.mDecisionHelp = Decision Support
+MenuBar_Irstea.mLoadXML = Load XML file...
+MenuBar_Irstea.mHelpIrstea = Help
+
+MenuBar_Irstea.textOpenXML=Open XML File
+MenuBar_Irstea.userDir=user.dir
+MenuBar_Irstea.textWindow=XML File (*.xml)
+MenuBar_Irstea.extensionXml=xml
+MenuBar_Irstea.debugTextDisplay=Display ?
+
+MenuBar_Irstea.debugTextOpenSHP=Ouverture d'un fichier SHP
+MenuBar_Irstea.textWindowShape=Fichier SHP (*.shp)
+MenuBar_Irstea.extensionShape=shp

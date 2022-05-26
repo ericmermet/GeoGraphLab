@@ -1,0 +1,103 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * ComposantesConnexes.java in fr.ign.cogit.geographlab.algo.topologie
+ * 
+ */
+package fr.ign.cogit.geographlab.algo.topologie;
+
+import java.awt.Color;
+import java.util.Random;
+import java.util.Set;
+
+import org.jgrapht.alg.ConnectivityInspector;
+
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.Graphe;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.bars.MenuBar;
+import fr.ign.cogit.geographlab.lang.Messages;
+
+/**
+ * @author eric
+ *
+ */
+public class ComposantesConnexes extends Thread {
+	
+	private Carte carte;
+	
+	public Thread thread;
+	/**
+	 * 
+	 */
+	public ComposantesConnexes(Carte carte) {
+		this.thread = new Thread(this);
+		this.carte = carte;
+	}
+	
+	@Override
+	public void run() {
+		
+		long sleep = 2000;
+		try {
+			this.thread.sleep(sleep);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		System.out.println("GO !");
+		ConnectivityInspector<Noeud, Arc> testDeConnexite = new ConnectivityInspector<Noeud, Arc>(this.carte.getGraphe());
+		Double nbrCompConnex = new Double(testDeConnexite.connectedSets().size());
+		
+		System.out.println(Messages.getString("MenuBar.133") + nbrCompConnex); //$NON-NLS-1$
+		int i = 1;
+		int indiceNbNoeudsMax = 0, max = -1;
+		
+		for (Set<Noeud> setNoeud : testDeConnexite.connectedSets()) {
+			
+			Random alea = new java.util.Random(System.currentTimeMillis());
+			Color c = new Color(Math.abs(alea.nextInt()) % 256, Math.abs(alea.nextInt()) % 256, Math.abs(alea.nextInt()) % 256);
+			
+//			System.out.println(setNoeud.toString());
+			System.out.print("|."+setNoeud.size());
+			
+			System.out.print("c");
+			for (Noeud noeud : setNoeud) {
+				noeud.getNoeudGraphique().setColor(c);
+			}
+			System.out.print("|");
+			
+			int size = setNoeud.size();
+			
+			if (size > max) {
+				max = size;
+				indiceNbNoeudsMax = i;
+			}
+			
+//			System.out.println(Messages.getString("MenuBar.134") + i++ + Messages.getString("MenuBar.135") + setNoeud.size()); //$NON-NLS-1$ //$NON-NLS-2$
+			System.out.println();
+		}
+		
+		System.out.println("Début suppression ...");
+		i = 1;
+		for (Set<Noeud> setNoeud : testDeConnexite.connectedSets()) {
+			System.out.print("|s"+setNoeud.size());
+			if (i != indiceNbNoeudsMax) {
+				for (Noeud noeud : setNoeud) {
+					this.carte.getVueDuGraphe().delNoeud(noeud.getNoeudGraphique());
+					this.carte.getGraphe().delNoeud(noeud);
+//					System.out.print(".");
+				}
+				System.out.print("-|");
+			}
+			System.out.println();
+			i++;
+		}
+		System.out.println("Fin");
+		this.carte.getGraphe().setGrapheChange();
+		this.carte.repaint();
+	}
+}

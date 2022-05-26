@@ -1,0 +1,655 @@
+/**
+ * GeoGrapheLab ( http://geographlab.free.fr/ ) - This file is part of
+ * GeoGrapheLab Copyright (C) 2007-2012 - IGN - Eric Mermet & IRSTEA - Jean-Marc
+ * Tacnet (2011)
+ * 
+ * This file must be used under the terms of the CeCILL-B. This source file is
+ * licensed as described in the file COPYING, which you should have received as
+ * part of this distribution. The terms are also available at
+ * http://www.cecill.info/licences/Licence_CeCILL_V2-en.txt
+ * 
+ */
+
+package fr.irstea.adret.geographlab.plugins.fichier;
+
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneLayout;
+
+import org.geotools.data.DataStore;
+import org.geotools.data.DataUtilities;
+import org.geotools.data.DefaultTransaction;
+import org.geotools.data.FeatureSource;
+import org.geotools.data.FileDataStoreFactorySpi;
+import org.geotools.data.FileDataStoreFinder;
+import org.geotools.data.Transaction;
+import org.geotools.data.collection.SpatialIndexFeatureCollection;
+import org.geotools.data.collection.SpatialIndexFeatureSource;
+import org.geotools.data.memory.MemoryDataStore;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
+import org.geotools.data.shapefile.indexed.IndexedShapefileDataStore;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.data.simple.SimpleFeatureStore;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.SchemaException;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeDescriptor;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.CoordinateSequence;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.MultiLineString;
+import com.vividsolutions.jts.geom.MultiPoint;
+
+import fr.ign.cogit.geographlab.algo.maths.Distances;
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.PanelMainDraw;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesApplication;
+// import com.vividsolutions.jts.geom.Point;
+
+/**
+ * @author Eric
+ * 
+ */
+public class FileOperation {
+	
+	/**
+	 * @param mainWindow
+	 * @param parent
+	 */
+	MainWindow mainWindow;
+	PanelMainDraw parent;
+	static boolean returnValue = false;
+	
+	public static void ouvrirFichierShapePoints(MainWindow mainWindow, String dir, String f) throws URISyntaxException, IOException {
+		
+		try {
+			
+			File fileToLoad = new File(f);
+			
+			URL shapeURL = fileToLoad.toURI().toURL();
+			
+			// chargement du fichier shape
+			ShapefileDataStore store;
+			
+			store = new ShapefileDataStore(shapeURL);
+			
+			// nom du fichier sans l'extension
+			String nomFichier = store.getTypeNames()[0];
+			System.out.println(nomFichier);
+			
+			// recuperation des elements contenu dans le fichier
+			FeatureSource<SimpleFeatureType, SimpleFeature> source = store.getFeatureSource(nomFichier);
+			
+			// recuperation des elements de la source dans une collection
+			FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures();
+			
+			// affichage du nombre des objets
+			System.out.println(collection.size() + " champs dans le fichier shapefile " + nomFichier);
+			
+			// Changement du nom de la carte -> ajout du nom du fichier
+			mainWindow.panelActif.carte.setNom(mainWindow.panelActif.carte.getNom() + "_" + nomFichier);
+			
+			FeatureIterator<SimpleFeature> it = collection.features();
+			
+			HashSet<Noeud> setNoeudNonAssocies = new HashSet<Noeud>();
+			setNoeudNonAssocies.addAll(mainWindow.panelActif.carte.getGraphe().getNoeuds());
+			HashSet<Noeud> setNoeudNonAssociesNouveaux = new HashSet<Noeud>();
+			
+			int nbCorrespondanceTrouvee = 0;
+			
+			while (it.hasNext()) {
+				
+				SimpleFeature feature = it.next();
+				
+				String id = feature.getID();
+				Geometry geom = (Geometry) feature.getDefaultGeometry();
+				
+				String nomNoeud = (String) feature.getAttribute("NOM");
+				Double poidsNoeud = (Double) feature.getAttribute("Poids");
+				Double x = (Double) feature.getAttribute("CoordX");
+				Double y = -(Double) feature.getAttribute("CoordY");
+				Point pointNoeud = new Point(x.intValue(), y.intValue());
+				Noeud noeudLocal = new Noeud(nomNoeud, pointNoeud);
+				noeudLocal.setPonderation(poidsNoeud.doubleValue());
+				setNoeudNonAssociesNouveaux.add(noeudLocal);
+				System.out.println(id + " nom noeud = " + nomNoeud + " " + geom.getCoordinate().x + " " + geom.getCoordinate().y + " " + "poids = " + poidsNoeud);
+				
+				for (Noeud iterNoeud : mainWindow.panelActif.carte.getGraphe().getNoeuds()) {
+					
+					if (iterNoeud.getPosition().distance(pointNoeud) <= 7 && setNoeudNonAssocies.contains(iterNoeud)) {
+						// C'est le bon noeud
+						System.out.println("Corresspondance trouvée entre noeuds");
+						System.out.println(iterNoeud.getPosition() + " -> " + pointNoeud + " distance = " + iterNoeud.getPosition().distance(pointNoeud));
+						iterNoeud.setNom(nomNoeud);
+						// iterNoeud.setPonderation(poidsNoeud.doubleValue());
+						iterNoeud.setIndicateurValeur(mainWindow.panelActif.carte.getNomIndicateurCourant(), poidsNoeud.doubleValue());
+						nbCorrespondanceTrouvee++;
+						setNoeudNonAssocies.remove(iterNoeud);
+						setNoeudNonAssociesNouveaux.remove(noeudLocal);
+						break;
+					}
+					// //Ici le noeud lu n'est pas associe puisque break
+					// setNoeudNonAssociesNouveaux.add(noeudLocal);
+				}
+				
+			}
+			
+			// Pour tous les noeuds du shape non associes, on va comparer avec
+			// les noeuds du graphe qui eux aussi ne sont pas associes
+			for (Noeud noeudGraphe : setNoeudNonAssocies) {
+				
+				double distanceMin = Integer.MAX_VALUE;
+				Noeud noeudDistanceMin = noeudGraphe;
+				
+				for (Noeud iterNoeudEntree : setNoeudNonAssociesNouveaux) {
+					double distanceMinCalcule = iterNoeudEntree.getPosition().distance(noeudGraphe.getPosition());
+					if (distanceMinCalcule < distanceMin) {
+						noeudDistanceMin = iterNoeudEntree;
+					}
+				}
+				
+				// Association au noeud de distance min parmi les noeuds non
+				// associes
+				noeudGraphe.setNom(noeudDistanceMin.getNom());
+				// noeudGraphe.setPonderation(noeudDistanceMin.getPonderation());
+				noeudGraphe.setIndicateurValeur(mainWindow.panelActif.carte.getNomIndicateurCourant(), noeudDistanceMin.getPonderation());
+			}
+			
+			// Autonomer les arcs par rapport aux nouveaux noms des noeuds
+			for (Arc iterArc : mainWindow.panelActif.carte.getGraphe().getArcs()) {
+				String nomNoeudA = iterArc.getSource().getNom();
+				String nomNoeudB = iterArc.getTarget().getNom();
+				iterArc.setNom(nomNoeudA + " - " + nomNoeudB);
+			}
+			
+			System.out.println("Nombre de noeuds associes = " + nbCorrespondanceTrouvee);
+			mainWindow.panelActif.carte.getGraphe().setGrapheChange();
+			
+			store.dispose();
+			
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void ouvrirFichierShapeODPoints(MainWindow mainWindow, String dir, String f) throws URISyntaxException, IOException {
+		
+		try {
+			
+			File fileToLoad = new File(f);
+			URL shapeURL = fileToLoad.toURI().toURL();
+			
+			// chargement du fichier shape
+			ShapefileDataStore store;
+			
+			store = new ShapefileDataStore(shapeURL);
+			
+			// nom du fichier sans l'extension
+			String nomFichier = store.getTypeNames()[0];
+			System.out.println(nomFichier);
+			
+			// recuperation des elements contenu dans le fichier
+			FeatureSource<SimpleFeatureType, SimpleFeature> source = store.getFeatureSource(nomFichier);
+			
+			// recuperation des elements de la source dans une collection
+			FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures();
+			
+			SpatialIndexFeatureCollection siFc = new SpatialIndexFeatureCollection(collection.getSchema());
+			siFc.addAll(collection);
+			
+			// affichage du nombre des objets
+			System.out.println(collection.size() + " champs dans le fichier shapefile " + nomFichier);
+			
+//			FeatureIterator<SimpleFeature> it = collection.features();
+			
+			SimpleFeatureIterator sfIt = siFc.features();
+			
+			Noeud noeudTemp;
+			
+			mainWindow.panelActif.carte.getEspace().clearEspaceDeDef();
+			
+			Set<Noeud> noeudsPourOD = new HashSet<Noeud>();
+			
+			while (sfIt.hasNext()) {
+				
+				SimpleFeature feature = sfIt.next();
+				
+				String id = feature.getID();
+				Geometry geom = (Geometry) feature.getDefaultGeometry();
+				
+				System.out.println(id + " " + geom);
+				
+				com.vividsolutions.jts.geom.Point point;
+				
+				//1. Vérifier que les géométries sont uniquement ponctuelles collection.
+				if (geom instanceof MultiPoint) {
+					MultiPoint multiPoint = (MultiPoint) feature.getDefaultGeometry();
+					point = (com.vividsolutions.jts.geom.Point) multiPoint.getGeometryN(0);
+				} else if (geom instanceof com.vividsolutions.jts.geom.Point) {
+					point = (com.vividsolutions.jts.geom.Point) geom;
+				} else {
+					System.out.println("ATTENTION : Geometrie differente de Point ou MultiPoint");
+					point = null;
+					return;
+				}
+				
+				//2. Retrouver le noeud le plus proche du point courant
+				noeudTemp = Distances.plusProcheVoisin(mainWindow.panelActif.carte.getGraphe().getNoeuds(), point);
+//				System.out.println(" noeud plus proche = " + noeudTemp.getNom());
+				noeudsPourOD.add(noeudTemp);
+				
+			}
+			
+			mainWindow.panelActif.carte.getEspace().setToutesLesOD(noeudsPourOD);
+			
+			store.dispose();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public static void exportShape(MainWindow mainWindow, String dir, File f) throws IOException, SchemaException {
+		
+		Calendar c1 = Calendar.getInstance();
+		long debut = c1.getTimeInMillis();
+		
+		File fileToLoadEdges = null;
+		File fileToLoadVertices = null;
+		
+		Transaction transactionEdges = null, transactionVertices = null;
+		//		FeatureWriter<SimpleFeatureType, SimpleFeature> writerEdges = null, writerVertices = null;
+		
+		ShapefileDataStoreFactory dataStoreFactoryEdges = null, dataStoreFactoryVertices = null;
+		IndexedShapefileDataStore newDataStoreEdges = null, newDataStoreVertices = null;
+		
+		FeatureIterator<SimpleFeature> iteratorEdges = null, iteratorVertices = null;
+		
+		SimpleFeatureType featureTypeEdges = null, featureTypeVertices = null;
+		
+		DefaultFeatureCollection featuresEdgesCollection = null, featuresVerticesCollection = null;
+		
+		try {
+			
+			// Si l'extension n'est pas presente
+			if (!f.getName().toLowerCase().endsWith("shp")) {
+				fileToLoadEdges = new File(f.toString() + ".shp");
+				fileToLoadVertices = new File(f.toString() + "_noeuds.shp");
+			} else { // Si l'extension est presente
+				fileToLoadEdges = new File(f.toString());
+				fileToLoadVertices = new File(f.toString().split(".shp")[0] + "_noeuds.shp");
+			}
+			
+			URL shapeURLEdges = fileToLoadEdges.toURI().toURL();
+			URL shapeURLVertices = fileToLoadVertices.toURI().toURL();
+			
+			dataStoreFactoryEdges = new ShapefileDataStoreFactory();
+			dataStoreFactoryVertices = new ShapefileDataStoreFactory();
+			
+			// Paramètres pour edges
+			Map<String, Serializable> paramsEdges = new HashMap<String, Serializable>();
+			paramsEdges.put("url", shapeURLEdges); //$NON-NLS-1$  //$NON-NLS-2$
+			paramsEdges.put("create spatial index", Boolean.TRUE); //$NON-NLS-1$
+			
+			// Paramètres pour vertices
+			Map<String, Serializable> paramsVertices = new HashMap<String, Serializable>();
+			paramsVertices.put("url", shapeURLVertices); //$NON-NLS-1$  //$NON-NLS-2$
+			paramsVertices.put("create spatial index", Boolean.TRUE); //$NON-NLS-1$
+			
+			newDataStoreEdges = (IndexedShapefileDataStore) dataStoreFactoryEdges.createNewDataStore(paramsEdges);
+			newDataStoreVertices = (IndexedShapefileDataStore) dataStoreFactoryVertices.createNewDataStore(paramsVertices);
+			
+			// Création du schéma pour les arcs
+			HashSet<String> tableauIndicateurs = new HashSet<String>();
+			
+			SimpleFeatureTypeBuilder b1 = new SimpleFeatureTypeBuilder();
+			b1.setName("SCHEMAEXPORTARCS");
+			
+			// Building Edges features type
+			b1.add("Nom", String.class);
+			for (Carte iterCarte : mainWindow.panelActif.couchesDeCartes.getCouches()) {
+				// stringSchemaGenerique += iterCarte.getNom() +":Double,";
+				tableauIndicateurs.add(iterCarte.getNomIndicateurCourant());
+				b1.add(iterCarte.getNom(), Double.class);
+			}
+			b1.add("geom", LineString.class); // then add geometry
+			featureTypeEdges = b1.buildFeatureType();
+			
+			SimpleFeatureTypeBuilder b2 = new SimpleFeatureTypeBuilder();
+			b2.setName("SCHEMAEXPORTNOEUDS");
+			
+			// Building Vertices features type
+			b2.add("Nom", String.class);
+			for (Carte iterCarte : mainWindow.panelActif.couchesDeCartes.getCouches()) {
+				// stringSchemaGenerique += iterCarte.getNom() +":Double,";
+				tableauIndicateurs.add(iterCarte.getNomIndicateurCourant());
+				b2.add(iterCarte.getNom(), Double.class);
+			}
+			b2.add("geom", com.vividsolutions.jts.geom.Point.class); // then add
+			// geometry
+			featureTypeVertices = b2.buildFeatureType();
+			
+			newDataStoreEdges.createSchema(featureTypeEdges);
+			// newDataStoreEdges.forceSchemaCRS(DefaultGeographicCRS.WGS84);
+			newDataStoreVertices.createSchema(featureTypeVertices);
+			// newDataStoreVertices.forceSchemaCRS(DefaultGeographicCRS.WGS84);
+			
+			GeometryFactory gf = new GeometryFactory();
+			featuresEdgesCollection = new DefaultFeatureCollection(null, null) {
+			};
+			featuresVerticesCollection = new DefaultFeatureCollection(null, null) {
+			};
+			
+			// Parcours des arcs et de leurs indicateurs
+			for (Arc iterArc : mainWindow.panelActif.carte.getGraphe().getArcs()) {
+				
+				Coordinate[] tabCoord = null;
+				
+				if (mainWindow.panelActif.carte.variablesDeCarte.afficheGeometrie == 0) {
+					
+					tabCoord = new Coordinate[2];
+					tabCoord[0] = new Coordinate(iterArc.getPointSource().getX(), -iterArc.getPointSource().getY());
+					tabCoord[1] = new Coordinate(iterArc.getPointCible().getX(), -iterArc.getPointCible().getY());
+					
+				} else if (mainWindow.panelActif.carte.variablesDeCarte.afficheGeometrie == 1) {
+					CoordinateSequence pts = iterArc.getArcGraphique().getGeometryLineString().getCoordinateSequence();
+					tabCoord = new Coordinate[pts.size()];
+					
+					for (int i = 0; i < pts.size() - 1; i++) {
+						Coordinate p0 = pts.getCoordinate(i);
+						// Coordinate p1 = pts.getCoordinate(i + 1);
+						tabCoord[i] = p0;
+					}
+					tabCoord[pts.size() - 1] = pts.getCoordinate(pts.size() - 1);
+				}
+				
+				Object[] attributsArcs = new Object[tableauIndicateurs.size() + 2];
+				
+				attributsArcs[0] = iterArc.getNom();
+				
+				int i = 1;
+				
+				for (String indicateur : tableauIndicateurs) {
+					attributsArcs[i++] = iterArc.getValeurPourIndicateur(indicateur);
+				}
+				
+				attributsArcs[tableauIndicateurs.size() + 1] = gf.createLineString(tabCoord);
+				
+				featuresEdgesCollection.add(SimpleFeatureBuilder.build(featureTypeEdges, attributsArcs, null));
+				
+			}
+			
+			// Parcours des noeuds et de leurs indicateurs
+			for (Noeud iterNoeud : mainWindow.panelActif.carte.getGraphe().getNoeuds()) {
+				
+				Coordinate tabCoord = new Coordinate(iterNoeud.getXPosition(), -iterNoeud.getYPosition());
+				
+				Object[] attributsNoeuds = new Object[tableauIndicateurs.size() + 2];
+				
+				attributsNoeuds[0] = iterNoeud.getNom();
+				
+				int i = 1;
+				
+				for (String indicateur : tableauIndicateurs) {
+					attributsNoeuds[i++] = iterNoeud.getValeurPourIndicateur(indicateur);
+				}
+				
+				attributsNoeuds[tableauIndicateurs.size() + 1] = gf.createPoint(tabCoord);
+				featuresVerticesCollection.add(SimpleFeatureBuilder.build(featureTypeVertices, attributsNoeuds, null));
+				
+			}
+			
+			iteratorEdges = (FeatureIterator<SimpleFeature>) featuresEdgesCollection.features();
+			iteratorVertices = (FeatureIterator<SimpleFeature>) featuresVerticesCollection.features();
+			
+			transactionEdges = new DefaultTransaction("ExportEdges");
+			transactionVertices = new DefaultTransaction("ExportVertices");
+			//			writerEdges = newDataStoreEdges.getFeatureWriterAppend(featureTypeEdges.getTypeName(), transactionEdges);
+			//			writerVertices = newDataStoreVertices.getFeatureWriterAppend(featureTypeVertices.getTypeName(), transactionVertices);
+			
+			// Transaction sur les arcs
+			SimpleFeatureStore featureStoreEdges = (SimpleFeatureStore) newDataStoreEdges.getFeatureSource(featureTypeEdges.getName());
+			// all
+			// features
+			featureStoreEdges.addFeatures(featuresEdgesCollection);
+			transactionEdges.commit(); // write it out
+			
+			
+			//			while (iteratorEdges.hasNext()) {
+			//				// copy the contents of each feature and transform the geometry
+			//				SimpleFeature featureEdges = iteratorEdges.next();
+			////				SimpleFeature copyEdges = writerEdges.next();
+			//				copyEdges.setAttributes(featureEdges.getAttributes());
+			//				
+			//				Geometry geometryEdges = (Geometry) featureEdges.getDefaultGeometry();
+			//				
+			//				copyEdges.setDefaultGeometry(geometryEdges);
+			//				writerEdges.write();
+			//			}
+			//			transactionEdges.commit();
+			
+			// Transaction sur les noeuds
+			
+			SimpleFeatureStore featureStoreVertices = (SimpleFeatureStore) newDataStoreVertices.getFeatureSource(featureTypeVertices.getName());
+			// all
+			// features
+			featureStoreVertices.addFeatures(featuresVerticesCollection);
+			transactionVertices.commit(); // write it out
+			
+			//			while (iteratorVertices.hasNext()) {
+			//				// copy the contents of each feature and transform the geometry
+			//				SimpleFeature featureVertices = iteratorVertices.next();
+			//				SimpleFeature copyVertices = writerVertices.next();
+			//				copyVertices.setAttributes(featureVertices.getAttributes());
+			//				
+			//				Geometry geometryVertices = (Geometry) featureVertices.getDefaultGeometry();
+			//				
+			//				copyVertices.setDefaultGeometry(geometryVertices);
+			//				writerVertices.write();
+			//			}
+			//			transactionVertices.commit();
+			
+			JOptionPane.showMessageDialog(null, "Export to shapefile complete");
+			
+			Calendar c2 = Calendar.getInstance();
+			
+			long tempsExecution = c2.getTimeInMillis() - debut;
+			System.out.println("Temps d'ecriture du fichier Shape (ms):" + tempsExecution);
+			
+		} catch (Exception problem) {
+			problem.printStackTrace();
+			transactionEdges.rollback();
+			transactionVertices.rollback();
+			JOptionPane.showMessageDialog(null, "Export to shapefile failed");
+		} finally {
+			if (featuresVerticesCollection != null)
+				featuresVerticesCollection.close(iteratorVertices);
+			if (featuresEdgesCollection != null)
+				featuresEdgesCollection.close(iteratorEdges);
+			if (iteratorEdges != null)
+				iteratorEdges.close();
+			if (iteratorVertices != null)
+				iteratorVertices.close();
+			if (transactionEdges != null)
+				transactionEdges.close();
+			if (transactionVertices != null)
+				transactionVertices.close();
+			//			if (writerEdges != null)
+			//				writerEdges.close();
+			//			if (writerVertices != null)
+			//				writerVertices.close();
+		}
+	}
+	
+	DataStore exportToShapefile(MemoryDataStore memory, String typeName, File directory) throws IOException {
+		// existing feature source from MemoryDataStore
+		SimpleFeatureSource featureSource = memory.getFeatureSource(typeName);
+		SimpleFeatureType ft = featureSource.getSchema();
+		
+		String fileName = ft.getTypeName();
+		File file = new File(directory, fileName + ".shp");
+		
+		Map<String, java.io.Serializable> creationParams = new HashMap<String, java.io.Serializable>();
+		creationParams.put("url", DataUtilities.fileToURL(file));
+		
+		FileDataStoreFactorySpi factory = FileDataStoreFinder.getDataStoreFactory("shp");
+		DataStore dataStore = factory.createNewDataStore(creationParams);
+		
+		dataStore.createSchema(ft);
+		
+		// The following workaround to write out the prj is no longer needed
+		// ((ShapefileDataStore)dataStore).forceSchemaCRS(ft.getCoordinateReferenceSystem());
+		
+		SimpleFeatureStore featureStore = (SimpleFeatureStore) dataStore.getFeatureSource(typeName);
+		
+		Transaction t = new DefaultTransaction();
+		try {
+			SimpleFeatureCollection collection = featureSource.getFeatures(); // grab
+			// all
+			// features
+			featureStore.addFeatures(collection);
+			t.commit(); // write it out
+		} catch (IOException eek) {
+			eek.printStackTrace();
+			try {
+				t.rollback();
+			} catch (IOException doubleEeek) {
+				// rollback failed?
+			}
+		} finally {
+			t.close();
+		}
+		return dataStore;
+	}
+	
+	public static boolean askTextField(MainWindow mainWindow, List<AttributeDescriptor> descriptors) {
+		
+		// final String textFieldChoosen;
+		final JDialog dialoglSetNom = new JDialog(mainWindow, "Selection d'un champs pour les longueurs des arcs");
+		JPanel panelTexte = new JPanel();
+		JScrollPane scrollPane = new JScrollPane();
+		
+		dialoglSetNom.setModal(true);
+		
+		// Point mainPanelLocation = mainWindow.getLocationOnScreen();
+		// int xDialogLocation = mainPanelLocation.x / 2;
+		// int yDialogLocation = mainPanelLocation.y / 2;
+		
+		// dialoglSetNom.setLocation(xDialogLocation, yDialogLocation);
+		
+		dialoglSetNom.setResizable(true);
+		
+		String[] tousLesChamps = new String[descriptors.size() + 2];
+		
+		dialoglSetNom.setSize(600, 24 * tousLesChamps.length / 3 + 80);
+		
+		for (int i = 0; i < descriptors.size(); i++) {
+			tousLesChamps[i] = descriptors.get(i).getLocalName().toString();
+		}
+		tousLesChamps[descriptors.size()] = "Dist_euclidiennes";
+		tousLesChamps[descriptors.size() + 1] = "Dist_polylignes";
+		
+		final JComboBox<String> chooseTextField = new JComboBox<String>(tousLesChamps);
+		
+		final JCheckBox[] tabCheckBox = new JCheckBox[tousLesChamps.length];
+		
+		for (int i = 0; i < tabCheckBox.length; i++) {
+			tabCheckBox[i] = new JCheckBox(tousLesChamps[i]);
+		}
+		
+		chooseTextField.setSize(200, 25);
+		panelTexte.setLayout(new GridLayout(0, 3));
+		scrollPane.setLayout(new ScrollPaneLayout());
+		
+		// panelTexte.add(chooseTextField);
+		
+		for (int i = 0; i < tabCheckBox.length; i++) {
+			panelTexte.add(tabCheckBox[i]);
+		}
+		
+		JPanel panelBoutons = new JPanel();
+		JButton bOK = new JButton("Ok");
+		bOK.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent aebOk) {
+				// Recuperation des champs choisi
+				
+				for (int i = 0; i < tabCheckBox.length; i++) {
+					if (tabCheckBox[i].isSelected())
+						fr.ign.cogit.geographlab.fichier.FileOperation.textFieldShapeAttribute.add(tabCheckBox[i].getText());
+				}
+				dialoglSetNom.setVisible(false);
+				dialoglSetNom.dispose();
+				returnValue = true;
+				
+			}
+		});
+		JButton bCancel = new JButton("Annuler");
+		bCancel.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent aebCancel) {
+				dialoglSetNom.setVisible(false);
+				dialoglSetNom.dispose();
+				returnValue = false;
+			}
+		});
+		panelBoutons.setLayout(new FlowLayout(FlowLayout.CENTER));
+		panelBoutons.add(bOK);
+		panelBoutons.add(bCancel);
+		
+		dialoglSetNom.setLayout(new FlowLayout(FlowLayout.CENTER));
+		
+		scrollPane.add(panelTexte);
+		
+		dialoglSetNom.add(panelTexte);
+		dialoglSetNom.add(panelBoutons);
+		
+		dialoglSetNom.setLocation(ConstantesApplication.tailleFenetreX_div2 - dialoglSetNom.getWidth() / 2, ConstantesApplication.tailleFenetreY_div2 - dialoglSetNom.getHeight() / 2);
+		
+		dialoglSetNom.setVisible(true);
+		
+		return returnValue;
+	}
+	
+}

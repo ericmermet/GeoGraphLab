@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<decision_support>
+	
+	<gglVersion>0.2.4-SNAPSHOT</gglVersion>
+
+	<indicators>
+
+		<indicator>
+			<name>DENSITE_NORMALISE</name>
+			<attribute_name>DENSITE_NORM</attribute_name>
+			<theme>POPULATION</theme>
+			<component>nodes</component>			
+		</indicator>
+
+		<indicator>
+			<name>POPULATION_TOTALE</name>
+			<attribute_name>POP_TOT_NORM</attribute_name>
+			<theme>POPULATION</theme>
+			<component>nodes</component>
+		</indicator>
+
+		<indicator>
+			<name>DIFFERENCE_ABSOLUE_NORMALISEE</name>
+			<attribute_name>SOLDE_ENTR_ABS_NORM</attribute_name>
+			<theme>POPULATION</theme>
+			<component>nodes</component>
+		</indicator>
+		
+		<indicator>
+			<name>FLUX_ENTRANT_NORMALISE</name>
+			<attribute_name>FLUX_ENTR_NORM</attribute_name>
+			<theme>ENSEIGNEMENT</theme>
+			<component>nodes</component>
+		</indicator>
+
+		<indicator>
+			<name>FLUX_SORTANT_NORMALISE</name>
+			<attribute_name>FLUX_SORT_NORM</attribute_name>
+			<theme>ENSEIGNEMENT</theme>
+			<component>nodes</component>
+		</indicator>
+
+		<indicator>
+			<name>DISTANCE_EUCLIDIENNE</name>
+			<attribute_name>DIST_EUCL</attribute_name>
+			<theme>SINUOSITE</theme>
+			<component>edges</component>
+		</indicator>
+
+		<indicator>
+			<name>DISTANCE_CURVILIGNE</name>
+			<attribute_name>SHAPE_LENG</attribute_name>
+			<theme>SINUOSITE</theme>
+			<component>edges</component>
+		</indicator>
+		
+		<indicator>
+			<name>LONGUEUR</name>
+			<attribute_name>LONGEUR</attribute_name>
+			<theme>SINUOSITE</theme>
+			<component>edges</component>
+		</indicator>
+		
+		<indicator>
+			<name>DISTANCE_EAU</name>
+			<attribute_name>DIST_EAU</attribute_name>
+			<theme>SINUOSITE</theme>
+			<component>edges</component>
+		</indicator>
+		
+		<indicator>
+			<name>DISTANCE_POMPIER</name>
+			<attribute_name>DIST_POMPI</attribute_name>
+			<theme>SINUOSITE</theme>
+			<component>edges</component>
+		</indicator>
+		
+		<indicator>
+			<name>LARGEUR_ROUTE</name>
+			<attribute_name>LARGEUR_RT</attribute_name>
+			<theme>SINUOSITE</theme>
+			<component>edges</component>
+		</indicator>
+		
+	</indicators>
+
+	<operations>
+
+		<operation>
+			<result>ATT_ENSEIGNE</result>
+			<theme>ENSEIGNEMENT</theme>
+			<operand_1>FLUX_ENTR_NORM</operand_1>
+			<weight_1>1.0</weight_1>
+			<operand_2>FLUX_SORT_NORM</operand_2>
+			<weight_2>1.0</weight_2>
+		</operation>
+
+		<operation>
+			<result>ATT_POP</result>
+			<theme>POPULATION</theme> 
+			<operand_1>DENSITE_NORM</operand_1>
+			<weight_1>1.0</weight_1>
+			<operand_2>POP_TOT_NORM</operand_2>
+			<weight_2>1.0</weight_2>
+			<operand_3>SOLDE_ENTR_ABS_NORM</operand_3>
+			<weight_3>1.0</weight_3>
+		</operation>
+
+		<operation>
+			<result>SINUOSITE</result>
+			<theme>THEME_SINUOSITE</theme>
+			<operand_1>DISTANCE_CURVILIGNE</operand_1>
+			<weight_1>1.0</weight_1>
+			<operator>divideby</operator>
+			<operand_2>DISTANCE_EUCLIDIENNE</operand_2>
+			<weight_2>1.0</weight_2>
+		</operation>
+
+	</operations>
+
+</decision_support>

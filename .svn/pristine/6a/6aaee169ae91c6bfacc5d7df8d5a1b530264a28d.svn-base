@@ -1,0 +1,355 @@
+/**
+ * GeoGraphLab - Eric Mermet - Cogit / IGN 2007 - 2010
+ * 
+ * ${file_name} in ${package_name}
+ * 
+ */
+
+package fr.ign.cogit.geographlab.exploration;
+
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.ihm.constantes.ConstantesLegende;
+
+import java.awt.Color;
+import java.util.Arrays;
+
+public class Legende implements Cloneable {
+	
+	MainWindow fenetrePrincipale;
+	Carte carte;
+	
+	public boolean locked = false;
+	
+	public int typeDeLegende;
+	public int natureDeLegende;
+	public int intervalles;
+	public double min;
+	public double max;
+	public Color[] couleurs;
+	public double[] echelle;
+	public double[] valeurs;
+	
+	private int typeDeLegendeParDefaut = ConstantesLegende.legendeEffectifsEgaux;
+	private int natureDeLegendeParDefaut = ConstantesLegende.natureLegendeSequentielle;
+	private Color[] defaultColor = { new Color(13, 13, 13), new Color(168, 35, 56), new Color(216, 111, 81), new Color(255, 171, 98), new Color(255, 225, 155), new Color(255, 255, 154) };
+	private int intervallesDefaut = 6;
+	private int nbDeValeurs = 0;
+	private double defaultmin = 0;
+	private double defaultmax = 100;
+	private double[] echelleParDefaut = { this.defaultmin, 17, 33, 50, 66, 83, this.defaultmax };
+	// private String typeLegend = "IntervallesEgaux"; //ou "EffectifsEgaux"
+	
+	private double scaleFactor = 0.0;
+	
+	public Legende(MainWindow fenetrePrincipale, Carte carte) {
+		
+		this.fenetrePrincipale = fenetrePrincipale;
+		this.carte = carte;
+		
+		this.typeDeLegende = this.typeDeLegendeParDefaut;
+		this.natureDeLegende = this.natureDeLegendeParDefaut;
+		this.intervalles = this.intervallesDefaut;
+		this.min = this.defaultmin;
+		this.max = this.defaultmax;
+		double unSurNbMarquesPlusUn = 1 / (this.intervalles + 1.0);
+		this.scaleFactor = unSurNbMarquesPlusUn;
+		this.intervalles = this.intervallesDefaut;
+		this.couleurs = this.defaultColor;
+		this.echelle = this.echelleParDefaut;
+		
+	}
+	
+	public Legende(MainWindow fenetrePrincipale, Carte carte, int typeDeLegende, int intervalles, Color[] couleurs, double min, double max) {
+		this(fenetrePrincipale, carte);
+		this.typeDeLegende = typeDeLegende;
+		this.natureDeLegende = natureDeLegendeParDefaut;
+		this.intervalles = intervalles;
+		this.min = min;
+		this.max = max;
+		this.couleurs = couleurs;
+	}
+	
+	public Legende(MainWindow fenetrePrincipale, Carte carte, int typeDeLegende, int intervalles, Color[] couleurs, double min, double max, double[] valeurs) {
+		// Constructeur pour effectif egaux
+		this(fenetrePrincipale, carte, typeDeLegende, intervalles, couleurs, min, max);
+		this.valeurs = valeurs;
+		this.nbDeValeurs = new Double(this.valeurs.length / intervalles).intValue();
+	}
+	
+	public void setColors(Color[] colors) {
+		this.couleurs = new Color[colors.length];
+		this.couleurs = colors;
+		setLegendesNoeudsArcsZonePourValeurs();
+	}
+	
+	public void setColors(int nbCaissons) {
+		this.couleurs = new Color[nbCaissons];
+		for (int i = 0; i < this.couleurs.length; i++) {
+			this.couleurs[i] = this.defaultColor[i];
+		}
+	}
+	
+	public void setEchelle(double[] echelle) {
+		// this.echelleParDefaut = new double[echelle.length];
+		// this.echelleParDefaut = echelle;
+		// for (int i = 0; i < echelle.length; i++) {
+		// System.out.println(this.echelleParDefaut[i]);
+		// }
+		this.echelle = echelle;
+	}
+	
+	public void setEchelle(double min, double max, int intervalles) {
+		this.min = min;
+		this.max = max;
+		this.intervalles = intervalles;
+		
+		this.echelle = new double[intervalles + 1];
+		
+		double raison = (this.max -this.min) / (intervalles);
+		double somme = this.min-raison;
+		
+		for (int k = 0; k < intervalles + 1; k++) {
+//			this.echelle[k] = Math.floor((this.max - this.min) * k * this.scaleFactor + this.min);
+			somme += raison;
+			somme = Math.rint(somme);
+			this.echelle[k] = somme;
+		}
+		this.echelle[0] = this.min;
+		this.echelle[this.echelle.length-1] = this.max;
+	}
+	
+	public double[] getEchelle() {
+		return this.echelle;
+	}
+	
+	public void setTypeLegend(String typeLegend) {
+		if (typeLegend.compareTo("Effectifs egaux") == 0) {
+			this.typeDeLegende = ConstantesLegende.legendeEffectifsEgaux;
+		} else {
+			if (typeLegend.compareTo("Intervalles egaux") == 0) {
+				this.typeDeLegende = ConstantesLegende.legendeIntervallesEgaux;
+			}
+		}
+	}
+	
+	public int getTypeLegend() {
+		return this.typeDeLegende;
+	}
+	
+	public void setNatureLegend(int natureLegend) {
+		this.natureDeLegende = natureLegend;
+	}
+	
+	public int getNatureLegend() {
+		return this.natureDeLegende;
+	}
+	
+	public void setLegendePourValeurs(double[] valeur) {
+		
+		this.min = Double.MAX_VALUE;
+		this.max = Double.MIN_VALUE;
+		this.echelle = new double[this.intervalles + 1];
+		
+		switch (getTypeLegend()) {
+			case ConstantesLegende.legendeIntervallesEgaux:
+				// Determination des min et max
+				setMinMax(valeur);
+				
+				// Determination des intervalles
+				for (int k = 0; k < this.intervalles; k++) {
+					this.echelle[k] = (this.max - this.min) * k * this.scaleFactor + this.min;
+				}
+				break;
+			case ConstantesLegende.legendeEffectifsEgaux:
+				int nbEffectifParClasse = (int) Math.ceil(valeur.length / getIntervallesDefaut());
+				int resteDivisionEffectifParClasse = valeur.length % getIntervallesDefaut();
+				
+				for (int k = 0; k < this.intervalles - 1; k++) {
+					this.echelle[k] = valeur[k * nbEffectifParClasse];
+				}
+				this.echelle[getIntervallesDefaut()] = this.max;
+				break;
+			default:
+				break;
+		}
+		
+	}
+	
+	public void setIntervallesDefaut(int nbIntervalles) {
+		this.intervalles = nbIntervalles;
+		
+		setEchelle(this.min, this.max, nbIntervalles);
+	}
+	
+	public int getIntervallesDefaut() {
+		return this.intervallesDefaut;
+	}
+	
+	public int getIntervalles() {
+		return this.intervalles;
+	}
+	
+	public Color getCouleurPourValeur(double valeur) {
+		
+		Color returnColor = Color.BLACK;
+		
+		for( int i = 0; i<this.echelle.length; i++ ) {
+			if( valeur < this.echelle[i] )
+				return this.couleurs[i-1];
+		}
+		
+		return returnColor;
+		
+	}
+	
+	public Color getColorLegendeIntervallesEgaux(double valeur) {
+		Color returnColor = Color.BLACK;
+		
+		for (int i = 0; i < this.echelle.length - 1; i++) {
+			if (valeur >= this.echelle[i] && valeur <= this.echelle[i + 1]) {
+				returnColor = this.couleurs[this.couleurs.length - 1 - i];
+				break;
+			}
+		}
+		
+		return returnColor;
+	}
+	
+	public Color getColorLegendeEffectifsEgaux(double valeur) {
+		Color returnColor = Color.BLACK;
+		
+		// FAIRE LA RECUPERATION DES VALEURS DANS UNE AUTRE METHODE ET FAIRE UN
+		// TEST SI LES NOUVELLES VALEURS SONT DEJA OBTENUES
+		
+		// On recupere les valeurs des noeuds et arcs
+		this.nbDeValeurs = this.fenetrePrincipale.panelActif.carte.getGraphe().getNoeuds().size() + this.fenetrePrincipale.panelActif.carte.getGraphe().getArcs().size();
+		this.valeurs = new double[this.nbDeValeurs];
+		
+		int j = 0;
+		for (Noeud iterNoeud : this.fenetrePrincipale.panelActif.carte.getGraphe().getNoeuds()) {
+			// this.valeurs[j++] = iterNoeud.getValeurVue().doubleValue();
+			this.valeurs[j++] = iterNoeud.getValeurPourIndicateur(this.fenetrePrincipale.panelActif.carte.getNomIndicateurCourant());
+		}
+		for (Arc iterArc : this.fenetrePrincipale.panelActif.carte.getGraphe().getArcs()) {
+			this.valeurs[j++] = iterArc.getValeurPourIndicateur(this.fenetrePrincipale.panelActif.carte.getNomIndicateurCourant());
+		}
+		
+		// Tri du tableau
+		Arrays.sort(this.valeurs);
+		
+		this.echelle = new double[this.intervalles + 1];
+		int nbValeursParClasse = new Double(Math.rint(this.nbDeValeurs / (this.echelle.length - 1))).intValue();
+		
+		// Trouver les frontieres
+		for (int i = 0; i < this.echelle.length - 1; i++) {
+			this.echelle[i] = this.valeurs[nbValeursParClasse * i];
+		}
+		this.echelle[this.echelle.length - 1] = this.valeurs[this.valeurs.length - 1];
+		
+		for (int i = 0; i < this.echelle.length - 1; i++) {
+			if (valeur >= this.echelle[i] && valeur <= this.echelle[i + 1]) {
+				returnColor = this.couleurs[this.couleurs.length - 1 - i];
+				break;
+			}
+		}
+		
+		return returnColor;
+	}
+	
+	public Color[] getDefaultColors() {
+		return this.defaultColor;
+	}
+	
+	public Color[] getColors() {
+		return this.couleurs;
+	}
+	
+	public double[] getDefaultScale() {
+		return this.echelleParDefaut;
+	}
+	
+	public void setMin(double min) {
+		this.min = min;
+	}
+	
+	public void setMax(double max) {
+		this.max = max;
+	}
+	
+	public void setMinMax(double valeurs[]) {
+		for (int i = 0; i < valeurs.length; i++) {
+			if (valeurs[i] < this.min)
+				this.min = valeurs[i];
+			if (valeurs[i] > this.max)
+				this.max = valeurs[i];
+		}
+	}
+	
+	public void setLegendesNoeudsArcsZonePourValeurs() {
+		
+		System.out.println("setLegendesNoeudsArcsZonePourValeurs");
+		
+		// Attribution des couleurs des arcs en fonction des valeurs
+		for (Arc iterArc : this.carte.getGraphe().getArcs()) {
+			Double valeurDeLarc = iterArc.getValeurPourIndicateur(this.carte.getNomIndicateurCourant());
+			Color couleurDeLarc = null;
+			if (valeurDeLarc != null) {
+				switch (getTypeLegend()) {
+					case ConstantesLegende.legendeIntervallesEgaux:
+						couleurDeLarc = this.carte.getLegendeDeLaCarte().getColorLegendeIntervallesEgaux(valeurDeLarc.doubleValue());
+						break;
+					case ConstantesLegende.legendeEffectifsEgaux:
+						couleurDeLarc = this.carte.getLegendeDeLaCarte().getColorLegendeEffectifsEgaux(valeurDeLarc.doubleValue());
+						break;
+					case ConstantesLegende.legendePersonnalisee:
+						couleurDeLarc = this.carte.getLegendeDeLaCarte().getCouleurPourValeur(valeurDeLarc.doubleValue());
+						break;
+				}
+			} else {
+				couleurDeLarc = Color.LIGHT_GRAY;
+			}
+			
+			iterArc.getArcGraphique().setIndicateurCouleur(this.carte.getNomIndicateurCourant(), couleurDeLarc);
+		}
+		
+		// Attribution des couleurs noeuds en fonction des valeurs
+		for (Noeud iterNoeud : this.carte.getGraphe().getNoeuds()) {
+			Double valeurDuNoeud = iterNoeud.getValeurPourIndicateur(this.carte.getNomIndicateurCourant());
+			Color couleurDuNoeud = null;
+			switch (getTypeLegend()) {
+				case ConstantesLegende.legendeIntervallesEgaux:
+					couleurDuNoeud = this.carte.getLegendeDeLaCarte().getColorLegendeIntervallesEgaux(valeurDuNoeud.doubleValue());
+					break;
+				case ConstantesLegende.legendeEffectifsEgaux:
+					couleurDuNoeud = this.carte.getLegendeDeLaCarte().getColorLegendeEffectifsEgaux(valeurDuNoeud.doubleValue());
+					break;
+				case ConstantesLegende.legendePersonnalisee:
+					couleurDuNoeud = this.carte.getLegendeDeLaCarte().getCouleurPourValeur(valeurDuNoeud.doubleValue());
+					break;
+				default:
+					break;
+			}
+			
+			iterNoeud.getNoeudGraphique().setIndicateurCouleur(this.carte.getNomIndicateurCourant(), couleurDuNoeud);
+		}
+		
+		// Attribution des couleurs des zones en fonction des valeurs
+		
+		// Un repaint pour mettre a jour la carte
+		this.fenetrePrincipale.panelActif.repaint();
+	}
+	
+	@Override
+	public Object clone() {
+		Object o = null;
+		try {
+			o = super.clone();
+		} catch (CloneNotSupportedException e) {
+			System.err.println("MyObject can't clone");
+		}
+		return o;
+	}
+	
+}

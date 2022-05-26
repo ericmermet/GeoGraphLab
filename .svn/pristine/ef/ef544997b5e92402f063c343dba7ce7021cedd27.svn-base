@@ -1,0 +1,334 @@
+/**
+ * GeoGraphLab - eric - Cogit / IGN
+ * 2007 - 2013
+ *
+ * OpenShape_Irstea.java in fr.irstea.adret.geographlab.plugins.fichier
+ * 
+ */
+package fr.irstea.adret.geographlab.plugins.fichier;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.swing.JOptionPane;
+
+import org.geotools.data.FeatureSource;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.FeatureIterator;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.AttributeDescriptor;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.MultiLineString;
+import com.vividsolutions.jts.geom.Point;
+
+import fr.ign.cogit.geographlab.algo.maths.Distances;
+import fr.ign.cogit.geographlab.exploration.Carte;
+import fr.ign.cogit.geographlab.fichier.OpenProgressBar;
+import fr.ign.cogit.geographlab.graphe.Arc;
+import fr.ign.cogit.geographlab.graphe.Noeud;
+import fr.ign.cogit.geographlab.ihm.MainWindow;
+import fr.ign.cogit.geographlab.lang.Messages;
+import fr.ign.cogit.geographlab.util.Timer;
+import fr.irstea.adret.geographlab.plugins.ihm.exploration.HierarchicalAnalysis;
+import fr.irstea.adret.geographlab.plugins.modele.Indicator;
+import fr.irstea.adret.geographlab.plugins.modele.Operation;
+
+/**
+ * @author eric
+ *
+ */
+public class DecisionSupportOpenShape extends Thread {
+	
+	private MainWindow mainWindow;
+	private String file;
+	private ArrayList<Indicator> listIndicators;
+	private ArrayList<Operation> listOperations;
+	
+	/**
+	 * 
+	 */
+	public DecisionSupportOpenShape(MainWindow mainWindow, String file, ArrayList<Indicator> listIndicators, ArrayList<Operation> listOperations) {
+		
+		this.mainWindow = mainWindow;
+		this.file = file;
+		this.listIndicators = listIndicators;
+		this.listOperations = listOperations;
+		
+	}
+	
+	@Override
+	public void run() {
+		
+		File fileToLoad = new File(this.file);
+		
+		Timer.tic();
+		
+		OpenProgressBar openBar = null;
+		
+		GeometryFactory geomFac = new GeometryFactory();
+		
+		try {
+			
+			URL shapeURL = fileToLoad.toURI().toURL();
+			
+			// chargement du fichier shape
+			ShapefileDataStore store;
+			
+			store = new ShapefileDataStore(shapeURL);
+			
+			// nom du fichier sans l'extension
+			String nomFichier = store.getTypeNames()[0];
+			System.out.println(nomFichier);
+			
+			// recuperation des elements contenu dans le fichier
+			FeatureSource<SimpleFeatureType, SimpleFeature> source = store.getFeatureSource(nomFichier);
+			
+			// recuperation des elements de la source dans une collection
+			FeatureCollection<SimpleFeatureType, SimpleFeature> collection = source.getFeatures();
+			
+			// affichage du nombre des objets
+			System.out.println(collection.size() + Messages.getString("FileOperationOpenShape.0") + nomFichier); //$NON-NLS-1$
+			
+			// recuperation du schema - featuretype -
+			// FeatureType ft = source.getSchema();
+			
+			// liste des noms et types des attributs
+			List<AttributeDescriptor> descriptors = collection.getSchema().getAttributeDescriptors();
+			
+			ArrayList<String> tousLesChamps = new ArrayList<String>();
+			for (int i = 0; i < descriptors.size(); i++) {
+				tousLesChamps.add(descriptors.get(i).getLocalName().toString());
+			}
+			
+			List<String> textField = new ArrayList<String>() ;	//Get fields from checkboxesconstraints
+			for (Indicator iterIndicator : this.listIndicators) {
+				if( iterIndicator.isActive())
+					textField.add(iterIndicator.getAttribute_name());
+			}
+			//Cross retained fields between shape & xml loaded file
+			textField.retainAll(tousLesChamps);
+			
+			if(  textField.isEmpty() )
+				return;
+			//else
+//			FileOperation.textFieldShapeAttribute = textField;
+//			String sens = textField.get(textField.size()-1);
+//			textField.remove(textField.size()-1);
+			
+//			//Creation d'un nombre de cartes en consequence -1 (une carte est deja creee par defaut)
+//			//Mais d'abord on enleve les cartes parentes du gestionnaire de couches
+//			this.mainWindow.panelActif.couchesDeCartes.retirerToutesLesChouchesParentes();
+//			for (int i = 0; i < textField.size(); i++) {
+//				Carte carteTemp = new Carte(this.mainWindow.panelActif);
+//				carteTemp.setNom(textField.get(i));
+//				carteTemp.setNomIndicateurCourant(carteTemp.getNom());
+//				//L'ajout de cartes dans le gestionnaire est implicite et est effectue a la creation de la carte
+//				//				this.parent.couchesDeCartes.ajouterUneCoucheCarte(carteTemp);
+//			}
+			HierarchicalAnalysis hA = new HierarchicalAnalysis(this.mainWindow.panelActif, this.listIndicators, this.listOperations);
+			hA.createIndicators(textField);
+			hA.createOperations(this.listOperations);
+			
+			// creation d'un iterateur sur la collection et affichage d'un des attributs
+			FeatureIterator<SimpleFeature> it = collection.features();
+			int i = 0;
+			
+			HashMap<Point, Noeud> setNoeudsCrees = new HashMap<Point, Noeud>();
+			
+			boolean flag3D = false;
+			
+			//Déclaration de la barre de progression d'ouverture
+			openBar = new OpenProgressBar(collection.size(), this.file);
+			
+			while (it.hasNext()) {
+				
+				try{
+					
+					
+					SimpleFeature feature = it.next();
+					
+					openBar.remoteBar(++i, Messages.getString("FileOperationOpenShape.1") + feature.getID().toString() ); //$NON-NLS-1$
+					
+					Geometry geom = (Geometry)feature.getDefaultGeometry();
+					
+					LineString line;
+					
+					if (geom instanceof MultiLineString) {
+						MultiLineString multiLine = (MultiLineString) feature.getDefaultGeometry();
+						if( ! multiLine.isEmpty() )
+							line = (LineString) multiLine.getGeometryN(0);
+						else
+							line =null;
+					} else if (geom instanceof LineString) {
+						line = (LineString) geom;
+					} else {
+						// TODO Add a logger
+						System.out.println(Messages.getString("FileOperationOpenShape.2")); //$NON-NLS-1$
+						JOptionPane.showMessageDialog(this.mainWindow, Messages.getString("FileOperationOpenShape.3")); //$NON-NLS-1$
+						line = null;
+						openBar.dispose();
+						openBar.setVisible(false);
+						return;
+					}
+					
+					Coordinate coordNoeudIni;
+					if( line != null) {
+						
+						coordNoeudIni = new Coordinate(line.getCoordinateN(0));
+						
+						if (coordNoeudIni.z != Double.NaN) {
+							flag3D = true;
+						}
+						
+						Coordinate coordNoeudFin = new Coordinate(line.getCoordinateN(line.getCoordinates().length - 1));
+						
+						coordNoeudIni.y = - coordNoeudIni.y;
+						coordNoeudFin.y = - coordNoeudFin.y;
+						Point pIni = geomFac.createPoint(coordNoeudIni);
+						Point pFin = geomFac.createPoint(coordNoeudFin);
+						
+//						Point pTemp;
+						// Détection du sens selon orientation BDTOPO
+//						String sensTexte = (String)feature.getAttribute(sens);
+//						if( sensTexte != null ) {
+//							if( sensTexte.compareTo(Messages.getString("FileOperationOpenShape.4")) == 0 ) { //$NON-NLS-1$
+//								pTemp = pIni;
+//								pIni = pFin;
+//								pFin = pTemp;
+//							}
+//						}
+						
+						Noeud noeudDepartLu = null , noeudArriveLu = null;
+						
+						if( setNoeudsCrees.containsKey(pIni) ) {
+							noeudDepartLu = setNoeudsCrees.get(pIni);
+							//				System.out.println("noeud départ retrouvé");
+						} else {
+							noeudDepartLu = new Noeud(pIni);
+							setNoeudsCrees.put(pIni, noeudDepartLu);
+						}
+						
+						if( setNoeudsCrees.containsKey(pFin) ) {
+							noeudArriveLu = setNoeudsCrees.get(pFin);
+							//				System.out.println("noeud arrivé retrouvé");
+						} else {
+							noeudArriveLu = new Noeud(pFin);
+							setNoeudsCrees.put(pFin, noeudArriveLu);
+						}
+						
+						Arc arcAajoute = new Arc(noeudDepartLu, noeudArriveLu);
+						arcAajoute.setNom(arcAajoute.getSource().getNom() + Messages.getString("FileOperationOpenShape.5") + arcAajoute.getTarget().getNom()); //$NON-NLS-1$
+						//Ajout de la geometrie de l'arc sur l'objet arc graphique
+						arcAajoute.getArcGraphique().setGeom(geom);
+						
+						//On charge les donnees pour toutes les cartes parentes
+						for (Carte iterCarte: this.mainWindow.panelActif.couchesDeCartes.getCouches()) {
+							
+							//Si elle est parente
+							if( iterCarte.isParent() ) {
+								
+								iterCarte.getGraphe().addNoeud(noeudDepartLu);
+								noeudDepartLu.setIndicateurValeur(iterCarte.getNom(), 0.0);
+								iterCarte.getVueDuGraphe().addNoeud(noeudDepartLu.getNoeudGraphique());
+								
+								iterCarte.getGraphe().addNoeud(noeudArriveLu);
+								noeudArriveLu.setIndicateurValeur(iterCarte.getNom(), 0.0);
+								iterCarte.getVueDuGraphe().addNoeud(noeudArriveLu.getNoeudGraphique());
+								
+								try {
+									
+									double poids = 0.0;
+									if( iterCarte.getNom().compareTo(Messages.getString("FileOperationOpenShape.6")) == 0 ){ //$NON-NLS-1$
+										//Sinon distance auto le long de la courbe avec ou sans le z si dispo
+										if (flag3D) {
+											poids = Distances.length3D(line.getCoordinateSequence());
+										} else {
+											poids = line.getLength();
+										}
+									} else{
+										if( iterCarte.getNom().compareTo(Messages.getString("FileOperationOpenShape.7")) == 0 ) { //$NON-NLS-1$
+											poids = Distances.lengthEuclidian(line.getCoordinateSequence());
+										}else{
+											try{
+												poids = ((Double)feature.getAttribute(iterCarte.getNom())).doubleValue();
+												
+											}catch (ClassCastException e) {
+												poids = ((Integer)feature.getAttribute(iterCarte.getNom())).doubleValue();
+											}
+										}
+										
+										iterCarte.getGraphe().addArcPondere(arcAajoute, poids);
+										
+										//C'est ici que l'on choisit la valeur de la couche en mode normal
+										arcAajoute.setPoidsDistance(poids);
+										arcAajoute.setPoidsTemps(poids);
+										
+										arcAajoute.setIndicateurValeur(iterCarte.getNom(), poids);
+										
+										iterCarte.getVueDuGraphe().addArc(arcAajoute.getArcGraphique());
+										
+									}
+									
+									iterCarte.getGraphe().addArcPondere(arcAajoute, poids);
+									
+									//C'est ici que l'on choisit la valeur de la couche en mode normal
+									arcAajoute.setPoidsDistance(poids);
+									arcAajoute.setPoidsTemps(poids);
+									
+									arcAajoute.setIndicateurValeur(iterCarte.getNom(), poids);
+									
+									iterCarte.getVueDuGraphe().addArc(arcAajoute.getArcGraphique());
+									
+								} catch (Exception e) {
+									System.out.println(Messages.getString("FileOperationOpenShape.8") + iterCarte.getNom()); //$NON-NLS-1$
+									iterCarte.getGraphe().addArcPondere(arcAajoute, 1.0);
+								}
+							}
+						}
+						
+					}
+				}catch( IllegalStateException ise) {
+					ise.printStackTrace();
+					System.out.println(Messages.getString("FileOperationOpenShape.9")); //$NON-NLS-1$
+				}
+			}
+			
+		}catch (MalformedURLException e) {
+			e.printStackTrace();
+			System.out.println(Messages.getString("FileOperationOpenShape.10")); //$NON-NLS-1$
+		}catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			System.out.println(Messages.getString("FileOperationOpenShape.11")); //$NON-NLS-1$
+		}catch( IllegalStateException ise) {
+			ise.printStackTrace();
+			System.out.println(Messages.getString("FileOperationOpenShape.12")); //$NON-NLS-1$
+		}finally {
+			System.gc();
+			System.out.println("Fin Chargement Shape");
+		}
+		
+		openBar.dispose();
+		openBar.setVisible(false);
+		
+		System.out.println(Messages.getString("FileOperationOpenShape.13") + Timer.tac()); //$NON-NLS-1$
+		
+		for (Carte iterCarte: this.mainWindow.panelActif.couchesDeCartes.getCouches()) {
+			iterCarte.getGraphe().setGrapheChange();
+			System.out.println(Messages.getString("FileOperationOpenShape.14") + iterCarte.getGraphe().getNombreNoeuds() + Messages.getString("FileOperationOpenShape.15") + iterCarte.getGraphe().getNombreArcs()); //$NON-NLS-1$ //$NON-NLS-2$
+		}
+		
+		this.mainWindow.panelActif.centreVue();
+	}
+}
